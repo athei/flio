@@ -1,0 +1,7 @@
+[package]
+name = "flio"
+version = "0.1.0"
+authors = ["Alexander Theißen <alex@theissen.io>"]
+
+[dependencies]
+ether = "0.1.4"
