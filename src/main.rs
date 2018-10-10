@@ -10,7 +10,7 @@ use ether::pcap;
 fn run() {
     use std::fs::File;
 
-    let file = File::open("capture.pcap").unwrap();
+    let file = File::open("connect.pcap").unwrap();
 
     let pcap = pcap::PacketCapture::new(file);
     let (_, records) = pcap.parse().unwrap();
