@@ -6,3 +6,4 @@ authors = ["Alexander Theißen <alex@theissen.io>"]
 [dependencies]
 ether = "0.1.4"
 nom = "4.1.0"
+slice-deque = "0.1.14"
