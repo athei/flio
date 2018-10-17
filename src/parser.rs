@@ -2,6 +2,7 @@ use nom::{be_u16, be_u24, be_u32, be_u64, be_u8, IResult};
 
 pub const TRANSPORT_SIZE: usize = 4;
 pub const HEADER_SIZE: usize = 64;
+pub const SIG_SIZE: usize = 16;
 
 enum Dialect {
     SMB_2_0_2 = 0x0202,
@@ -23,12 +24,18 @@ struct Header {
     async_id: Option<u64>,
     tree_id: Option<u32>,
     session_id: u64,
-    signature: Vec<u8>,
+    signature: [u8; SIG_SIZE]
 }
 
 struct Message {
     header: Header,
     body: Vec<u8>,
+}
+
+fn copy_sig(input: &[u8]) -> [u8; SIG_SIZE] {
+    let mut ret = [0; SIG_SIZE];
+    ret.copy_from_slice(input);
+    ret
 }
 
 named!(tcp_transport<u32>, preceded!(tag!("\0"), be_u24));
@@ -51,7 +58,7 @@ fn smb_header(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
         tree_id: cond!(flags != 0x01, be_u32) >>
         async_id: cond!(flags == 0x01, be_u64) >>
         session_id: be_u64 >>
-        signature: take!(16) >>
+        signature: map!(take!(16), copy_sig) >>
         body: switch!(value!(next_command > HEADER_SIZE as u32),
             true => take!(next_command - HEADER_SIZE as u32) |
             false => take_while!(|_| true)
@@ -68,7 +75,7 @@ fn smb_header(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
                 async_id: async_id,
                 tree_id: tree_id,
                 session_id: session_id,
-                signature: signature.to_vec(),
+                signature: signature,
             },
             body: body.to_vec(),
         })
