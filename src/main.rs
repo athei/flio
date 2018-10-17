@@ -48,7 +48,7 @@ fn run() {
             if to_remove > buffer.len() {
                 continue;
             }
-            let after_remove  = buffer.len() - to_remove;
+            let after_remove = buffer.len() - to_remove;
             println!("SMB(2) message of len {} found", len);
             buffer.truncate_front(after_remove);
         } else {
