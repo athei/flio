@@ -4,6 +4,11 @@ version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "byteorder"
+version = "1.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "cfg-if"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -23,6 +28,8 @@ dependencies = [
 name = "flio"
 version = "0.1.0"
 dependencies = [
+ "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "byteorder 1.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "ether 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "nom 4.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "slice-deque 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -200,6 +207,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
 "checksum bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "228047a76f468627ca71776ecdebd732a3423081fcf5125585bcd7c49886ce12"
+"checksum byteorder 1.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "90492c5858dd7d2e78691cfb89f90d273a2800fc11d98f60786e5d87e2f83781"
 "checksum cfg-if 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "0c4e7bb64a8ebb0d856483e1e682ea3422f883c5f5615a90d51a2c82fe87fdd3"
 "checksum ether 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "b00184ae36a574305292f99999d213197c133918c73f2e6b756ccc043e7775f1"
 "checksum fuchsia-zircon 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"

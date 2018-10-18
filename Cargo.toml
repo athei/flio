@@ -7,3 +7,5 @@ authors = ["Alexander Theißen <alex@theissen.io>"]
 ether = "0.1.4"
 nom = "4.1.0"
 slice-deque = "0.1.14"
+bitflags = "1.0.4"
+byteorder = "1.2.6"

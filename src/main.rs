@@ -1,5 +1,8 @@
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate bitflags;
+extern crate byteorder;
 extern crate ether;
 extern crate slice_deque;
 
@@ -39,21 +42,32 @@ fn run() {
         }
 
         buffer.extend_from_slice(segment.payload());
-        if buffer.len() < parser::TRANSPORT_SIZE {
+        if buffer.len() < parser::TCP_TRANSPORT_LEN {
             continue;
         }
-        let len = parser::extract_message_length(&buffer);
-        if let Some(len) = len {
-            let to_remove = len as usize + parser::TRANSPORT_SIZE;
-            if to_remove > buffer.len() {
-                continue;
+
+        let mut after_remove;
+
+        {
+            let body = parser::transport_segment(&buffer);
+
+            if body.is_none() {
+                println!("Error decoding netbios header.");
+                return;
             }
-            let after_remove = buffer.len() - to_remove;
-            println!("SMB(2) message of len {} found", len);
+
+            let body = body.unwrap();
+            after_remove = buffer.len() - (body.len() + parser::TCP_TRANSPORT_LEN);
+            println!("SMB(2) message of len {} found", body.len());
+            let header = parser::messages(body, parser::Dialect::Smb3_0_2);
+            match header {
+                Ok(o) => println!("{:?}", o),
+                _ => panic!("Invalid packets found.")
+            }
+        }
+
+        if after_remove > 0 {
             buffer.truncate_front(after_remove);
-        } else {
-            println!("Error decoding netbios header.");
-            return;
         }
     }
 }

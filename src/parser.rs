@@ -1,34 +1,50 @@
-use nom::{be_u16, be_u24, be_u32, be_u64, be_u8, IResult};
+use nom::{le_u16, be_u24, le_u32, le_u64, le_u8, IResult};
+use byteorder::{BigEndian, ByteOrder};
 
-pub const TRANSPORT_SIZE: usize = 4;
-pub const HEADER_SIZE: usize = 64;
-pub const SIG_SIZE: usize = 16;
+pub const TCP_TRANSPORT_LEN: usize = 4;
+const HEADER_SIZE: usize = 64;
+const SIG_SIZE: usize = 16;
 
-enum Dialect {
-    SMB_2_0_2 = 0x0202,
-    SMB_2_1_0 = 0x0210,
-    SMB_3_0_0 = 0x0300,
-    SMB_3_0_2 = 0x0302,
-    SMB_3_1_1 = 0x0311,
-    SMB_Wildcard = 0x02FF,
+#[derive(Clone, Copy)]
+pub enum Dialect {
+    Smb2_0_2 = 0x0202,
+    Smb2_1_0 = 0x0210,
+    Smb3_0_0 = 0x0300,
+    Smb3_0_2 = 0x0302,
+    Smb3_1_1 = 0x0311,
+    Smb_Wildcard = 0x02FF,
 }
 
-struct Header {
-    credit_charge: u16,
-    channel_sequence: Option<u16>,
-    status: Option<u32>,
-    command: u16,
-    credit_request: u16,
-    flags: u32,
-    message_id: u64,
-    async_id: Option<u64>,
-    tree_id: Option<u32>,
-    session_id: u64,
-    signature: [u8; SIG_SIZE]
+bitflags! {
+    pub struct Flags: u32 {
+        const SERVER_TO_REDIR = 0x1;
+        const ASYNC_COMMAND = 0x2;
+        const RELATED_OPERATIONS = 0x4;
+        const SIGNED = 0x8;
+        const PRIORITY_MASK = 0x70;
+        const DFS_OPERATIONS = 0x10000000;
+        const REPLAY_OPERATION = 0x20000000;
+    }
 }
 
-struct Message {
-    header: Header,
+#[derive(Debug)]
+pub struct Header {
+    pub credit_charge: u16,
+    pub channel_sequence: Option<u16>,
+    pub status: Option<u32>,
+    pub command: u16,
+    pub credit_request: u16,
+    pub flags: Flags,
+    pub message_id: u64,
+    pub async_id: Option<u64>,
+    pub tree_id: Option<u32>,
+    pub session_id: u64,
+    pub signature: [u8; SIG_SIZE],
+}
+
+#[derive(Debug)]
+pub struct Message {
+    pub header: Header,
     body: Vec<u8>,
 }
 
@@ -38,36 +54,52 @@ fn copy_sig(input: &[u8]) -> [u8; SIG_SIZE] {
     ret
 }
 
+fn derive_channel_sequence(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u16> {
+    if is_response {
+        return None
+    }
+
+    match dialect {
+        Dialect::Smb3_0_0 | Dialect::Smb3_0_2 | Dialect::Smb3_1_1 => Some(BigEndian::read_u16(input)),
+        _ => None
+    }
+}
+
+fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u32> {
+    match dialect {
+        Dialect::Smb2_0_2 | Dialect::Smb2_1_0 | _ if is_response => Some(BigEndian::read_u32(input)),
+        _ => None
+    }
+}
+
 named!(tcp_transport<u32>, preceded!(tag!("\0"), be_u24));
 
-// TODO: bitflags und byteorder crates nutzen
-
-fn smb_header(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
+pub fn message(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
     do_parse!(input,
-        verify!(be_u8, |v| v == 0xFE) >>
+        verify!(le_u8, |v| v == 0xFE) >>
         tag!("SMB") >>
-        verify!(be_u16, |v| v == HEADER_SIZE as u16) >>
-        credit_charge: be_u16 >>
+        verify!(le_u16, |v| v == HEADER_SIZE as u16) >>
+        credit_charge: le_u16 >>
         status: take!(4) >>
-        command: be_u16 >>
-        credit_request: be_u16 >>
-        flags: be_u32 >>
-        next_command: be_u32 >>
-        message_id: be_u64 >>
-        cond!(flags != 0x01, take!(4)) >>
-        tree_id: cond!(flags != 0x01, be_u32) >>
-        async_id: cond!(flags == 0x01, be_u64) >>
-        session_id: be_u64 >>
+        command: le_u16 >>
+        credit_request: le_u16 >>
+        flags: map_opt!(le_u32, |i| Flags::from_bits(i)) >>
+        next_command: le_u32 >>
+        message_id: le_u64 >>
+        cond!(!flags.contains(Flags::ASYNC_COMMAND), take!(4)) >>
+        tree_id: cond!(!flags.contains(Flags::ASYNC_COMMAND), le_u32) >>
+        async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
+        session_id: le_u64 >>
         signature: map!(take!(16), copy_sig) >>
         body: switch!(value!(next_command > HEADER_SIZE as u32),
             true => take!(next_command - HEADER_SIZE as u32) |
-            false => take_while!(|_| true)
+            false => take!(input.len() - HEADER_SIZE)
         ) >>
         (Message {
             header: Header {
                 credit_charge: credit_charge,
-                channel_sequence: None,
-                status: None,
+                channel_sequence: derive_channel_sequence(status, dialect, flags.contains(Flags::SERVER_TO_REDIR)),
+                status: derive_status(status, dialect, flags.contains(Flags::SERVER_TO_REDIR)),
                 command: command,
                 credit_request: credit_request,
                 flags: flags,
@@ -82,9 +114,35 @@ fn smb_header(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
     )
 }
 
-pub fn extract_message_length(head: &[u8]) -> Option<u32> {
+pub fn messages(input: &[u8], dialect: Dialect) -> Result<Vec<Message>, ()> {
+    let mut result = Vec::new();
+    let mut cur = input;
+    loop {
+        if let Ok((remainder, output)) = message(cur, dialect) {
+            result.push(output);
+            if remainder.is_empty() {
+                break;
+            }
+            cur = remainder;
+        } else {
+            return Err(());
+        }
+    }
+    Ok(result)
+}
+
+pub fn transport_segment(head: &[u8]) -> Option<&[u8]> {
     return match tcp_transport(head) {
-        Ok((_, o)) => Some(o),
+        Ok((_, len)) => {
+            let start = TCP_TRANSPORT_LEN;
+            let end = start + len as usize;
+            if end - start > head.len() {
+                None
+            }
+            else {
+                Some(&head[start..end])
+            }
+        }
         _ => None,
     };
 }
