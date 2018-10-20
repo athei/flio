@@ -1,8 +1,8 @@
 use nom::{le_u16, be_u24, le_u32, le_u64, le_u8, IResult};
 use byteorder::{BigEndian, ByteOrder};
 
-pub const TCP_TRANSPORT_LEN: usize = 4;
-const HEADER_SIZE: usize = 64;
+pub const TRANSPORT_HEADER_LEN: usize = 4;
+const SMB_HEADER_LEN: usize = 64;
 const SIG_SIZE: usize = 16;
 
 #[derive(Clone, Copy)]
@@ -78,7 +78,7 @@ pub fn message(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
     do_parse!(input,
         verify!(le_u8, |v| v == 0xFE) >>
         tag!("SMB") >>
-        verify!(le_u16, |v| v == HEADER_SIZE as u16) >>
+        verify!(le_u16, |v| v == SMB_HEADER_LEN as u16) >>
         credit_charge: le_u16 >>
         status: take!(4) >>
         command: le_u16 >>
@@ -91,9 +91,9 @@ pub fn message(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
         async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
         session_id: le_u64 >>
         signature: map!(take!(16), copy_sig) >>
-        body: switch!(value!(next_command > HEADER_SIZE as u32),
-            true => take!(next_command - HEADER_SIZE as u32) |
-            false => take!(input.len() - HEADER_SIZE)
+        body: switch!(value!(next_command > SMB_HEADER_LEN as u32),
+            true => take!(next_command - SMB_HEADER_LEN as u32) |
+            false => take!(input.len() - SMB_HEADER_LEN)
         ) >>
         (Message {
             header: Header {
@@ -134,7 +134,7 @@ pub fn messages(input: &[u8], dialect: Dialect) -> Result<Vec<Message>, ()> {
 pub fn transport_segment(head: &[u8]) -> Option<&[u8]> {
     return match tcp_transport(head) {
         Ok((_, len)) => {
-            let start = TCP_TRANSPORT_LEN;
+            let start = TRANSPORT_HEADER_LEN;
             let end = start + len as usize;
             if end - start > head.len() {
                 None

@@ -49,7 +49,7 @@ mod tests {
             }
 
             buffer.extend_from_slice(segment.payload());
-            if buffer.len() < parser::TCP_TRANSPORT_LEN {
+            if buffer.len() < parser::TRANSPORT_HEADER_LEN {
                 continue;
             }
 
@@ -64,7 +64,7 @@ mod tests {
                 }
 
                 let body = body.unwrap();
-                after_remove = buffer.len() - (body.len() + parser::TCP_TRANSPORT_LEN);
+                after_remove = buffer.len() - (body.len() + parser::TRANSPORT_HEADER_LEN);
                 println!("SMB(2) message of len {} found", body.len());
                 let msg = parser::messages(body, parser::Dialect::Smb3_0_2);
                 assert!(msg.is_ok());
