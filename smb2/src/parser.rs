@@ -12,7 +12,7 @@ pub enum Dialect {
     Smb3_0_0 = 0x0300,
     Smb3_0_2 = 0x0302,
     Smb3_1_1 = 0x0311,
-    Smb_Wildcard = 0x02FF,
+    SmbWildcard = 0x02FF,
 }
 
 bitflags! {

@@ -6,7 +6,7 @@ extern crate byteorder;
 extern crate ether;
 extern crate slice_deque;
 
-mod parser;
+pub mod parser;
 
 #[cfg(test)]
 mod tests {
