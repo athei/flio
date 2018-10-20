@@ -1,5 +1,5 @@
 [package]
-name = "flio"
+name = "smb2"
 version = "0.1.0"
 authors = ["Alexander Theißen <alex@theissen.io>"]
 
