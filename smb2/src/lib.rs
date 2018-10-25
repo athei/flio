@@ -1,13 +1,13 @@
-#[macro_use]
 extern crate nom;
-#[macro_use]
 extern crate bitflags;
 extern crate byteorder;
 
-use nom::{le_u16, le_u32, le_u64, le_u8, IResult};
-use byteorder::{BigEndian, ByteOrder};
 pub mod transport;
 mod commands;
+
+use nom::*;
+use byteorder::{BigEndian, ByteOrder};
+use bitflags::bitflags;
 
 const SMB_HEADER_LEN: usize = 64;
 const SIG_SIZE: usize = 16;
