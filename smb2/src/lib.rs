@@ -12,14 +12,13 @@ use bitflags::bitflags;
 const SMB_HEADER_LEN: usize = 64;
 const SIG_SIZE: usize = 16;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub enum Dialect {
     Smb2_0_2 = 0x0202,
     Smb2_1_0 = 0x0210,
     Smb3_0_0 = 0x0300,
     Smb3_0_2 = 0x0302,
     Smb3_1_1 = 0x0311,
-    SmbWildcard = 0x02FF,
 }
 
 bitflags! {
@@ -36,11 +35,11 @@ bitflags! {
 
 #[derive(Debug)]
 pub struct Header {
-    pub credit_charge: u16,
+    pub credit_charge: Option<u16>,
     pub channel_sequence: Option<u16>,
     pub status: Option<u32>,
     pub command: u16,
-    pub credit_request: u16,
+    pub credit_req_grant: u16,
     pub flags: Flags,
     pub message_id: u64,
     pub async_id: Option<u64>,
@@ -84,10 +83,10 @@ fn parse_message(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
         verify!(le_u8, |v| v == 0xFE) >>
         tag!("SMB") >>
         verify!(le_u16, |v| v == SMB_HEADER_LEN as u16) >>
-        credit_charge: le_u16 >>
+        credit_charge: cond!(dialect > Dialect::Smb2_0_2, le_u16) >>
         status: take!(4) >>
         command: le_u16 >>
-        credit_request: le_u16 >>
+        credit_req_grant: le_u16 >>
         flags: map_opt!(le_u32, |i| Flags::from_bits(i)) >>
         next_command: le_u32 >>
         message_id: le_u64 >>
@@ -106,7 +105,7 @@ fn parse_message(input: &[u8], dialect: Dialect) -> IResult<&[u8], Message> {
                 channel_sequence: derive_channel_sequence(status, dialect, flags.contains(Flags::SERVER_TO_REDIR)),
                 status: derive_status(status, dialect, flags.contains(Flags::SERVER_TO_REDIR)),
                 command: command,
-                credit_request: credit_request,
+                credit_req_grant: credit_req_grant,
                 flags: flags,
                 message_id: message_id,
                 async_id: async_id,
