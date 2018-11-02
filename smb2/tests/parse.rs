@@ -40,14 +40,10 @@ fn parse_navigation() {
         }
 
         buffer.extend_from_slice(segment.payload());
-        if buffer.len() < smb2::transport::HEADER_LEN {
-            continue;
-        }
-
         let mut after_remove;
 
         {
-            let body = smb2::transport::get_payload(&buffer);
+            let body = smb2::remove_transport_header(&buffer);
 
             if body.is_none() {
                 println!("Error decoding netbios header.");
@@ -55,7 +51,7 @@ fn parse_navigation() {
             }
 
             let body = body.unwrap();
-            after_remove = buffer.len() - (body.len() + smb2::transport::HEADER_LEN);
+            after_remove = buffer.len() - (body.len() + 4);
             println!("SMB(2) message of len {} found", body.len());
             let msg = smb2::parse_messages(body, smb2::Dialect::Smb3_0_2);
             assert!(msg.is_ok());
