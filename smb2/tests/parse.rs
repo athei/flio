@@ -1,6 +1,7 @@
 extern crate ether;
 extern crate slice_deque;
 extern crate smb2;
+extern crate nom;
 
 use ether::packet::datalink::ethernet;
 use ether::packet::datalink::ethernet::EtherType::IPv4;
@@ -10,6 +11,7 @@ use ether::packet::transport::tcp;
 use ether::pcap;
 use std::path::PathBuf;
 use slice_deque::SliceDeque;
+use nom::Err;
 
 #[test]
 fn parse_navigation() {
@@ -40,25 +42,21 @@ fn parse_navigation() {
         }
 
         buffer.extend_from_slice(segment.payload());
+
         let mut after_remove;
 
-        {
-            let body = smb2::remove_transport_header(&buffer);
-
-            if body.is_none() {
-                println!("Error decoding netbios header.");
+        match smb2::parse(&buffer, smb2::Dialect::Smb3_0_2) {
+            Ok((remaining, messages)) => {
+                println!("{:?}", messages);
+                after_remove = remaining.len();
+            },
+            Err(Err::Incomplete(_)) => continue,
+            _ => {
+                assert!(false);
                 return;
             }
+        };
 
-            let body = body.unwrap();
-            after_remove = buffer.len() - (body.len() + 4);
-            println!("SMB(2) message of len {} found", body.len());
-            let msg = smb2::parse_messages(body, smb2::Dialect::Smb3_0_2);
-            assert!(msg.is_ok());
-        }
-
-        if after_remove > 0 {
-            buffer.truncate_front(after_remove);
-        }
+        buffer.truncate_front(after_remove);
     }
 }

@@ -6,6 +6,8 @@ mod transport;
 mod commands;
 mod header;
 
+use nom::*;
+
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub enum Dialect {
     Smb2_0_2 = 0x0202,
@@ -16,25 +18,32 @@ pub enum Dialect {
 }
 
 #[derive(Debug)]
-pub struct Message {
+pub struct Message<'a> {
     pub header: header::Header,
+    pub body: &'a[u8]
 }
 
-pub use transport::get_payload as remove_transport_header;
-
-pub fn parse_messages(input: &[u8], dialect: Dialect) -> Result<Vec<Message>, ()> {
+pub fn parse_complete_payload(input: &[u8], dialect: Dialect) -> Result<Vec<Message>, nom::Err<&[u8]>> {
     let mut result = Vec::new();
     let mut cur = input;
     loop {
-        if let Ok((remainder, output)) = header::parse(cur, dialect) {
-            result.push(Message { header: output.0 });
-            if remainder.is_empty() {
-                break;
+        match complete!(cur, apply!(header::parse, dialect)) {
+            Ok((remainder, output)) => {
+                result.push(Message { header: output.0, body: output.1 });
+                if remainder.is_empty() {
+                    break;
+                }
+               cur = remainder;
             }
-            cur = remainder;
-        } else {
-            return Err(());
+            Err(x) => return Err(x),
         }
     }
     Ok(result)
+}
+
+pub fn parse(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Message>> {
+    match transport::get_payload(input) {
+        Ok((rest, out)) => parse_complete_payload(out, dialect).map(|i| (rest, i)),
+        Err(x) => Err(x),
+    }
 }
