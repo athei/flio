@@ -57,7 +57,7 @@ fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u3
     }
 }
 
-pub fn parse(input: &[u8], dialect: Dialect) -> IResult<&[u8], (Header, &[u8])> {
+pub fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8], (Header, &[u8])> {
     do_parse!(input,
         verify!(le_u8, |v| v == 0xFE) >>
         tag!("SMB") >>
@@ -67,6 +67,7 @@ pub fn parse(input: &[u8], dialect: Dialect) -> IResult<&[u8], (Header, &[u8])> 
         command: le_u16 >>
         credit_req_grant: le_u16 >>
         flags: map_opt!(le_u32, |i| Flags::from_bits(i)) >>
+        verify!(value!(flags.contains(Flags::SERVER_TO_REDIR)), |val| val == is_response) >>
         next_command: le_u32 >>
         message_id: le_u64 >>
         cond!(!flags.contains(Flags::ASYNC_COMMAND), take!(4)) >>
@@ -80,8 +81,8 @@ pub fn parse(input: &[u8], dialect: Dialect) -> IResult<&[u8], (Header, &[u8])> 
         ) >>
         (Header {
             credit_charge,
-            channel_sequence: derive_channel_sequence(status, dialect, flags.contains(Flags::SERVER_TO_REDIR)),
-            status: derive_status(status, dialect, flags.contains(Flags::SERVER_TO_REDIR)),
+            channel_sequence: derive_channel_sequence(status, dialect, is_response),
+            status: derive_status(status, dialect, is_response),
             command,
             credit_req_grant,
             flags,

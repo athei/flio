@@ -18,18 +18,18 @@ pub enum Dialect {
 }
 
 #[derive(Debug)]
-pub struct Message<'a> {
+pub struct Request<'a> {
     pub header: header::Header,
     pub body: &'a[u8]
 }
 
-pub fn parse_complete_payload(input: &[u8], dialect: Dialect) -> Result<Vec<Message>, nom::Err<&[u8]>> {
+pub fn parse_request_complete(input: &[u8], dialect: Dialect) -> Result<Vec<Request>, nom::Err<&[u8]>> {
     let mut result = Vec::new();
     let mut cur = input;
     loop {
-        match complete!(cur, apply!(header::parse, dialect)) {
+        match complete!(cur, apply!(header::parse, dialect, false)) {
             Ok((remainder, output)) => {
-                result.push(Message { header: output.0, body: output.1 });
+                result.push(Request { header: output.0, body: output.1 });
                 if remainder.is_empty() {
                     break;
                 }
@@ -41,9 +41,9 @@ pub fn parse_complete_payload(input: &[u8], dialect: Dialect) -> Result<Vec<Mess
     Ok(result)
 }
 
-pub fn parse(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Message>> {
+pub fn parse_request(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Request>> {
     match transport::get_payload(input) {
-        Ok((rest, out)) => parse_complete_payload(out, dialect).map(|i| (rest, i)),
+        Ok((rest, out)) => parse_request_complete(out, dialect).map(|i| (rest, i)),
         Err(x) => Err(x),
     }
 }

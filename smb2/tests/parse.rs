@@ -11,6 +11,7 @@ use ether::packet::transport::tcp;
 use ether::pcap;
 use std::path::PathBuf;
 use slice_deque::SliceDeque;
+use std::net::Ipv4Addr;
 use nom::Err;
 
 #[test]
@@ -40,12 +41,15 @@ fn parse_navigation() {
         if segment.payload().len() == 0 {
             continue;
         }
+        if packet.source() != Ipv4Addr::new(192, 168, 178, 23) {
+            continue;
+        }
 
         buffer.extend_from_slice(segment.payload());
 
         let mut after_remove;
 
-        match smb2::parse(&buffer, smb2::Dialect::Smb3_0_2) {
+        match smb2::parse_request(&buffer, smb2::Dialect::Smb3_0_2) {
             Ok((remaining, messages)) => {
                 println!("{:?}", messages);
                 after_remove = remaining.len();
