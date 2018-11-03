@@ -66,7 +66,7 @@ pub fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8]
         status: take!(4) >>
         command: le_u16 >>
         credit_req_grant: le_u16 >>
-        flags: map_opt!(le_u32, |i| Flags::from_bits(i)) >>
+        flags: map_opt!(le_u32, Flags::from_bits) >>
         verify!(value!(flags.contains(Flags::SERVER_TO_REDIR)), |val| val == is_response) >>
         next_command: le_u32 >>
         message_id: le_u64 >>
@@ -74,7 +74,7 @@ pub fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8]
         tree_id: cond!(!flags.contains(Flags::ASYNC_COMMAND), le_u32) >>
         async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
         session_id: le_u64 >>
-        signature: map!(take!(16), copy_sig) >>
+        signature: map!(take!(SIG_SIZE), copy_sig) >>
         body: switch!(value!(next_command > SMB_HEADER_LEN as u32),
             true => take!(next_command - SMB_HEADER_LEN as u32) |
             false => take!(input.len() - SMB_HEADER_LEN)

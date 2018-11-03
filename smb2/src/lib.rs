@@ -5,6 +5,7 @@ extern crate byteorder;
 mod transport;
 mod commands;
 mod header;
+mod smb1;
 
 use nom::*;
 
