@@ -59,8 +59,7 @@ fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u3
 
 pub fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8], (Header, &[u8])> {
     do_parse!(input,
-        verify!(le_u8, |v| v == 0xFE) >>
-        tag!("SMB") >>
+        tag!(b"\xfeSMB") >>
         verify!(le_u16, |v| v == SMB_HEADER_LEN as u16) >>
         credit_charge: cond!(dialect > Dialect::Smb2_0_2, le_u16) >>
         status: take!(4) >>
