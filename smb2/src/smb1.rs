@@ -32,7 +32,7 @@ bitflags! {
     }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum DialectLevel {
     NotSupported,
     Smb2,
@@ -49,6 +49,7 @@ impl<'a> From<&'a [u8]> for DialectLevel {
     }
 }
 
+#[derive(Debug)]
 pub struct Header {
     pub status: u32,
     pub flags: Flags,
@@ -60,10 +61,12 @@ pub struct Header {
     pub signature: [u8; SIG_SIZE],
 }
 
+#[derive(Debug)]
 pub struct NegotiateRequest {
     pub level: DialectLevel,
 }
 
+#[derive(Debug)]
 pub struct Request {
     pub header: Header,
     pub negotiate: NegotiateRequest
@@ -76,23 +79,16 @@ fn copy_sig(input: &[u8]) -> [u8; SIG_SIZE] {
 }
 
 fn merge_pid(high: u16, low: u16) -> u32 {
-    let b1: u8 = (high >> 8) as u8;
-    let b2: u8 = (high & 0xff) as u8;
-    let b3: u8 = (low >> 8) as u8;
-    let b4: u8 = (low & 0xff) as u8;
-
-    unsafe {
-        std::mem::transmute([b1, b2, b3, b4])
-    }
+    ((high as u32) << 16) + (low as u32)
 }
 
 fn parse_header(input: &[u8]) -> IResult<&[u8], (Header, &[u8])> {
     do_parse!(input,
-        verify!(le_u8, |v| v == 0xFF) >>
-        tag!("SMB") >>
-        tag!(b"\x72") >>
+        tag!(b"\xffSMB") >>
+        tag!(b"\x72") >> /* negotiate command */
         status: le_u32 >>
         flags: map_opt!(le_u8, Flags::from_bits) >>
+        verify!(value!(flags.contains(Flags::REPLY)), |is_reply: bool| !is_reply) >>
         flags2: map_opt!(le_u16, Flags2::from_bits) >>
         pid_high: le_u16 >>
         signature: map!(take!(SIG_SIZE), copy_sig) >>
@@ -128,7 +124,7 @@ named!(extract_dialect,
 );
 
 named!(parse_dialects<&[u8], DialectLevel>,
-    fold_many0!(extract_dialect, DialectLevel::NotSupported, fold_dialect)
+    fold_many0!(complete!(extract_dialect), DialectLevel::NotSupported, fold_dialect)
 );
 
 fn parse_negotiate_request(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
@@ -141,9 +137,9 @@ fn parse_negotiate_request(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
     )
 }
 
-fn parse_negotiate(input: &[u8]) -> Result<Request, nom::Err<&[u8]>> {
+pub fn parse_negotiate(input: &[u8]) -> IResult<&[u8], Request> {
     match parse_header(input) {
-        Ok((_, (header, body))) => Ok(Request { header, negotiate: (parse_negotiate_request(body)?).1 }),
+        Ok((rem, (header, body))) => Ok((rem, Request { header, negotiate: (parse_negotiate_request(body)?).1 })),
         Err(x) => Err(x)
     }
 }

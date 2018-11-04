@@ -19,7 +19,7 @@ fn parse_navigation() {
     use std::fs::File;
 
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("tests/data/navigation.pcap");
+    path.push("tests/data/connect.pcap");
     let file = File::open(path).unwrap();
     let pcap = pcap::PacketCapture::new(file);
     let (_, records) = pcap.parse().unwrap();
@@ -41,7 +41,7 @@ fn parse_navigation() {
         if segment.payload().len() == 0 {
             continue;
         }
-        if packet.source() != Ipv4Addr::new(192, 168, 178, 23) {
+        if packet.source() != Ipv4Addr::new(192, 168, 178, 20) {
             continue;
         }
 
@@ -56,8 +56,18 @@ fn parse_navigation() {
             },
             Err(Err::Incomplete(_)) => continue,
             _ => {
-                assert!(false);
-                return;
+                match smb2::parse_smb1_nego_request(&buffer) {
+                    Ok((rem, msg)) => {
+                        println!("{:?}", msg);
+                        after_remove = rem.len();
+                    },
+                    Err(Err::Incomplete(_)) => continue,
+                    e @ _ => {
+                        println!("{:?}", e);
+                        assert!(false);
+                        return;
+                    }
+                }
             }
         };
 
