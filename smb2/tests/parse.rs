@@ -47,19 +47,17 @@ fn parse_navigation() {
 
         buffer.extend_from_slice(segment.payload());
 
-        let after_remove;
-
         match smb2::parse_request(&buffer, smb2::Dialect::Smb3_0_2) {
             Ok((remaining, messages)) => {
                 println!("{:?}", messages);
-                after_remove = remaining.len();
+                buffer.truncate_front(remaining.len());
             },
             Err(Err::Incomplete(_)) => continue,
             _ => {
                 match smb2::parse_smb1_nego_request(&buffer) {
-                    Ok((rem, msg)) => {
+                    Ok((remaining, msg)) => {
                         println!("{:?}", msg);
-                        after_remove = rem.len();
+                        buffer.truncate_front(remaining.len());
                     },
                     Err(Err::Incomplete(_)) => continue,
                     e @ _ => {
@@ -70,7 +68,5 @@ fn parse_navigation() {
                 }
             }
         };
-
-        buffer.truncate_front(after_remove);
     }
 }
