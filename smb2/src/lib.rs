@@ -1,9 +1,4 @@
-extern crate nom;
-extern crate bitflags;
-extern crate byteorder;
-
 mod transport;
-mod commands;
 mod header;
 mod smb1;
 

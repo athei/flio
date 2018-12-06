@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ByteOrder};
 use bitflags::bitflags;
-use ::Dialect;
+use crate::Dialect;
 use nom::*;
 
 const SMB_HEADER_LEN: usize = 64;

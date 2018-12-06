@@ -2,6 +2,7 @@
 name = "smb2"
 version = "0.1.0"
 authors = ["Alexander Theißen <alex@theissen.io>"]
+edition = "2018"
 
 [dependencies]
 ether = "0.1.4"

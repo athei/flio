@@ -47,7 +47,7 @@ fn parse_navigation() {
 
         buffer.extend_from_slice(segment.payload());
 
-        let mut after_remove;
+        let after_remove;
 
         match smb2::parse_request(&buffer, smb2::Dialect::Smb3_0_2) {
             Ok((remaining, messages)) => {
