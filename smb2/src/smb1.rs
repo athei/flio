@@ -79,7 +79,7 @@ fn copy_sig(input: &[u8]) -> [u8; SIG_SIZE] {
 }
 
 fn merge_pid(high: u16, low: u16) -> u32 {
-    ((high as u32) << 16) + (low as u32)
+    (u32::from(high) << 16) + u32::from(low)
 }
 
 fn parse_header(input: &[u8]) -> IResult<&[u8], (Header, &[u8])> {
@@ -118,7 +118,7 @@ fn fold_dialect(accu: DialectLevel, add: &[u8]) -> DialectLevel {
 named!(extract_dialect,
     delimited!(
        tag!(b"\x02"),
-       take_till!(|v| v == 0),
+       take_until!("b\x00"),
        tag!(b"\x00")
     )
 );

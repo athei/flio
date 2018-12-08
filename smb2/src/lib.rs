@@ -1,3 +1,5 @@
+#![warn(clippy::all)]
+
 mod transport;
 mod header;
 mod smb1;
@@ -48,7 +50,7 @@ pub fn parse_request(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Reque
 pub fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, nom::Err<&[u8]>> {
     match complete!(input, smb1::parse_negotiate) {
         Ok((rem, out)) => {
-            assert!(rem.len() == 0, "Only pass complete segments into this function");
+            assert!(rem.is_empty(), "Only pass complete segments into this function");
             Ok(out)
         }
         Err(x) => Err(x),

@@ -13,8 +13,8 @@ bitflags! {
         const RELATED_OPERATIONS = 0x4;
         const SIGNED = 0x8;
         const PRIORITY_MASK = 0x70;
-        const DFS_OPERATIONS = 0x10000000;
-        const REPLAY_OPERATION = 0x20000000;
+        const DFS_OPERATIONS = 0x1000_0000;
+        const REPLAY_OPERATION = 0x2000_0000;
     }
 }
 
@@ -57,6 +57,7 @@ fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u3
     }
 }
 
+#[allow(clippy::cyclomatic_complexity)]
 pub fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8], (Header, &[u8])> {
     do_parse!(input,
         tag!(b"\xfeSMB") >>

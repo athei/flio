@@ -38,7 +38,7 @@ fn parse_navigation() {
         if segment.source() != 445 && segment.destination() != 445 {
             continue;
         }
-        if segment.payload().len() == 0 {
+        if segment.payload().is_empty() {
             continue;
         }
         if packet.source() != Ipv4Addr::new(192, 168, 178, 20) {
@@ -60,8 +60,8 @@ fn parse_navigation() {
                         buffer.truncate_front(remaining.len());
                     },
                     Err(Err::Incomplete(_)) => continue,
-                    e @ _ => {
-                        println!("{:?}", e);
+                    err => {
+                        println!("{:?}", err);
                         assert!(false);
                         return;
                     }
