@@ -5,10 +5,10 @@ authors = ["Alexander Theißen <alex@theissen.io>"]
 edition = "2018"
 
 [dependencies]
-ether = "0.1.4"
 nom = "4.1.0"
 bitflags = "1.0.4"
 byteorder = "1.2.6"
 
 [dev-dependencies]
 slice-deque = "0.1.14"
+ether = "0.1.4"

@@ -6,6 +6,8 @@ mod smb1;
 
 use nom::*;
 
+pub use crate::smb1::Request as V1Request;
+
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub enum Dialect {
     Smb2_0_2 = 0x0202,

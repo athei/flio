@@ -1,29 +1,32 @@
-extern crate ether;
-extern crate slice_deque;
-extern crate smb2;
-extern crate nom;
-
 use ether::packet::datalink::ethernet;
 use ether::packet::datalink::ethernet::EtherType::IPv4;
 use ether::packet::network::ipv4;
 use ether::packet::network::ipv4::Protocol::TCP;
 use ether::packet::transport::tcp;
 use ether::pcap;
-use std::path::PathBuf;
-use slice_deque::SliceDeque;
+use std::path::Path;
 use std::net::Ipv4Addr;
 use nom::Err;
+use smb2::{ Request, V1Request };
 
-#[test]
-fn parse_navigation() {
+enum CombinedRequest<'a> {
+	v1Request(V1Request),
+	v2Request(Request<'a>)
+}
+
+struct RequestList<'a> {
+    requests: Vec<CombinedRequest<'a>>,
+    underlying_buffer: Vec<u8>
+}
+
+fn parse_pcap(path: &Path) -> Result<RequestList, ()> {
     use std::fs::File;
 
-    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("tests/data/connect.pcap");
     let file = File::open(path).unwrap();
     let pcap = pcap::PacketCapture::new(file);
     let (_, records) = pcap.parse().unwrap();
-    let mut buffer = SliceDeque::<u8>::new();
+    let mut buffer = Vec::new();
+    let mut result = Vec::new();
 
     for record in records {
         let frame = ethernet::Frame::new(&record.payload);
@@ -46,27 +49,34 @@ fn parse_navigation() {
         }
 
         buffer.extend_from_slice(segment.payload());
+    };
 
-        match smb2::parse_request(&buffer, smb2::Dialect::Smb3_0_2) {
+    let mut ptr = buffer.as_slice();
+
+    while !ptr.is_empty() {
+        match smb2::parse_request(ptr, smb2::Dialect::Smb3_0_2) {
             Ok((remaining, messages)) => {
                 println!("{:?}", messages);
-                buffer.truncate_front(remaining.len());
+                ptr = &ptr[buffer.len() - remaining.len()..];
+                for msg in messages {
+                    result.push(CombinedRequest::v2Request(msg));
+                }
             },
-            Err(Err::Incomplete(_)) => continue,
             _ => {
                 match smb2::parse_smb1_nego_request(&buffer) {
                     Ok((remaining, msg)) => {
                         println!("{:?}", msg);
-                        buffer.truncate_front(remaining.len());
+                        ptr = &ptr[buffer.len() - remaining.len()..];
+                        result.push(CombinedRequest::v1Request(msg));
                     },
-                    Err(Err::Incomplete(_)) => continue,
-                    err => {
+                    Err(err) => {
                         println!("{:?}", err);
-                        assert!(false);
-                        return;
+                        return Err(()); 
                     }
                 }
             }
         };
     }
+
+    Ok(RequestList { requests: result, underlying_buffer: buffer })
 }
