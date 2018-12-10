@@ -48,7 +48,6 @@ pub fn parse_request(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Reque
     }
 }
 
-
 pub fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, nom::Err<&[u8]>> {
     match complete!(input, smb1::parse_negotiate) {
         Ok((rem, out)) => {
