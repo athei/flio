@@ -34,9 +34,6 @@ pub fn parse_pcap<'a>(path: &Path, buffer: &'a mut Vec<u8>) -> Result<RequestLis
             continue;
         }
         let segment = tcp::Packet::new(packet.payload());
-        if segment.source() != 445 && segment.destination() != 445 {
-            continue;
-        }
         if segment.payload().is_empty() {
             continue;
         }
@@ -49,7 +46,6 @@ pub fn parse_pcap<'a>(path: &Path, buffer: &'a mut Vec<u8>) -> Result<RequestLis
     while !ptr.is_empty() {
         match smb2::parse_request(ptr, smb2::Dialect::Smb3_0_2) {
             Ok((remaining, messages)) => {
-                println!("{:?}", messages);
                 ptr = &ptr[ptr.len() - remaining.len()..];
                 for msg in messages {
                     requests.push(CombinedRequest::V2(msg));
@@ -62,8 +58,7 @@ pub fn parse_pcap<'a>(path: &Path, buffer: &'a mut Vec<u8>) -> Result<RequestLis
                         ptr = &ptr[ptr.len() - remaining.len()..];
                         requests.push(CombinedRequest::V1(msg));
                     },
-                    Err(err) => {
-                        println!("{:?}", err);
+                    Err(_) => {
                         return Err(()); 
                     }
                 }

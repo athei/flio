@@ -3,23 +3,19 @@
 mod common;
 
 use std::path::PathBuf;
-use std::fs::read_dir;
 use crate::common::parse_pcap;
 
 #[test]
-fn headers() -> std::io::Result<()> {
+fn request_headers() -> std::io::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("tests/data");
+    path.push("tests/data/all_requests.pcap");
     let mut buffer = Vec::new();
 
-    for entry in read_dir(path)? {
-        let entry = entry?;
-        println!("Reading {:?}", entry.file_name());
-        let requests = parse_pcap(&entry.path(), &mut buffer);
-        assert!(requests.is_ok());
-        let requests = requests.unwrap();
-        assert!(!requests.requests.is_empty());
-    }
-
+    let requests = parse_pcap(&path, &mut buffer);
+    assert!(requests.is_ok());
+    let requests = requests.unwrap();
+    let len = requests.requests.len(); 
+    let len_should = 791;
+    assert!(len == len_should, "Length should be {} but is {}", len_should, len);
     Ok(())
 }
