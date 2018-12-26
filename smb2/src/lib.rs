@@ -7,6 +7,7 @@ mod smb1;
 use nom::*;
 
 pub use crate::smb1::Request as V1Request;
+pub use crate::smb1::DialectLevel as V1Dialect;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub enum Dialect {

@@ -118,14 +118,14 @@ fn fold_dialect(accu: DialectLevel, add: &[u8]) -> DialectLevel {
 named!(extract_dialect,
     delimited!(
        tag!(b"\x02"),
-       take_until!("b\x00"),
+       is_not!("b\x00"),
        tag!(b"\x00")
     )
 );
 
-named!(parse_dialects<&[u8], DialectLevel>,
-    fold_many0!(complete!(extract_dialect), DialectLevel::NotSupported, fold_dialect)
-);
+fn parse_dialects(input: &[u8]) -> IResult<&[u8], DialectLevel> {
+    fold_many1!(input, complete!(extract_dialect), DialectLevel::NotSupported, fold_dialect)
+}
 
 fn parse_negotiate_request(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
     do_parse!(input,

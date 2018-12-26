@@ -54,11 +54,10 @@ pub fn parse_pcap<'a>(path: &Path, buffer: &'a mut Vec<u8>) -> Result<RequestLis
             _ => {
                 match smb2::parse_smb1_nego_request(&ptr) {
                     Ok((remaining, msg)) => {
-                        println!("{:?}", msg);
                         ptr = &ptr[ptr.len() - remaining.len()..];
                         requests.push(CombinedRequest::V1(msg));
                     },
-                    Err(_) => {
+                    _ => {
                         return Err(()); 
                     }
                 }
