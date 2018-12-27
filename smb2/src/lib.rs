@@ -3,6 +3,7 @@
 mod transport;
 mod header;
 mod smb1;
+mod command;
 
 use nom::*;
 
