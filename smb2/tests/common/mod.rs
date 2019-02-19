@@ -1,11 +1,11 @@
-use ether::packet::datalink::ethernet;
-use ether::packet::datalink::ethernet::EtherType::IPv4;
-use ether::packet::network::ipv4;
-use ether::packet::network::ipv4::Protocol::TCP;
-use ether::packet::transport::tcp;
-use ether::pcap;
 use std::path::Path;
 use smb2::{ Request, V1Request };
+use pcarp::Capture;
+use pnet_packet::Packet;
+use pnet_packet::ethernet::{ EthernetPacket, EtherTypes };
+use pnet_packet::ipv4::Ipv4Packet;
+use pnet_packet::ipv6::Ipv6Packet;
+use pnet_packet::tcp::TcpPacket;
 
 pub enum CombinedRequest<'a> {
 	V1(V1Request),
@@ -16,30 +16,55 @@ pub struct RequestList<'a> {
     pub requests: Vec<CombinedRequest<'a>>,
 }
 
+enum IPPacket<'a> {
+    V4(Ipv4Packet<'a>),
+    V6(Ipv6Packet<'a>),
+}
+
+fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
+    match packet {
+        IPPacket::V4(p) => p.payload(),
+        IPPacket::V6(p) => p.payload(),
+    }
+}
+
 pub fn parse_pcap<'a>(path: &Path, buffer: &'a mut Vec<u8>) -> Result<RequestList<'a>, ()> {
     use std::fs::File;
 
     let file = File::open(path).unwrap();
-    let pcap = pcap::PacketCapture::new(file);
-    let (_, records) = pcap.parse().unwrap();
+    let mut pcap = Capture::new(file).unwrap();
     let mut requests = Vec::new();
 
-    for record in records {
-        let frame = ethernet::Frame::new(&record.payload);
-        if frame.ethertype() != IPv4 {
-            continue;
-        }
-        let packet = ipv4::Packet::new(frame.payload());
-        if packet.protocol() != TCP {
-            continue;
-        }
-        let segment = tcp::Packet::new(packet.payload());
-        if segment.payload().is_empty() {
-            continue;
-        }
+    while let Some(record) = pcap.next() {
+        let record = record.unwrap();
+        let interface = record.interface.unwrap();
 
-        buffer.extend_from_slice(segment.payload());
+        /* smb packets must be contained in ethernet frames */
+        assert_eq!(interface.link_type, pcarp::LinkType::ETHERNET);
+        let eth_frame = EthernetPacket::new(record.data).unwrap();
+
+        /* smb packets must use ipv4 or ipv6 */
+        let ip_packet = match eth_frame.get_ethertype() {
+            EtherTypes::Ipv4 => {
+                let v4 = Ipv4Packet::new(eth_frame.payload()).unwrap();
+                IPPacket::V4(v4)
+            },
+            EtherTypes::Ipv6 => {
+                let v6 = Ipv6Packet::new(eth_frame.payload()).unwrap();
+                IPPacket::V6(v6)
+            },
+            _ => panic!("All packets must be IPv4 or IPv6")
+        };
+        let ip_payload = get_payload(&ip_packet);
+
+        /* smb is transported in tcp port 445 */
+        let tcp_segment = TcpPacket::new(ip_payload).unwrap();
+        assert!(tcp_segment.get_source() == 445 || tcp_segment.get_destination() == 445 ||
+            tcp_segment.get_source() == 139 || tcp_segment.get_destination() == 139);
+
+        buffer.extend_from_slice(tcp_segment.payload());
     };
+
 
     let mut ptr = buffer.as_slice();
 
