@@ -77,7 +77,7 @@ pub fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8]
         signature: map!(take!(SIG_SIZE), copy_sig) >>
         body: switch!(value!(next_command > SMB_HEADER_LEN as u32),
             true => take!(next_command - SMB_HEADER_LEN as u32) |
-            false => take!(input.len() - SMB_HEADER_LEN)
+            false => call!(rest)
         ) >>
         (Header {
             credit_charge,
