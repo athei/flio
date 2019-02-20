@@ -2,16 +2,12 @@
 
 mod common;
 
-use std::path::PathBuf;
 use crate::common::parse_pcap;
 
 #[test]
 fn first_smb1_request() {
-    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("tests/data/smb1_negot_requests.pcapng");
     let mut buffer = Vec::new();
-
-    let parsed = &parse_pcap(&path, &mut buffer).unwrap().requests;
+    let parsed = &parse_pcap("smb1_negot_requests", &mut buffer).unwrap().requests;
 
     let first;
     let second;

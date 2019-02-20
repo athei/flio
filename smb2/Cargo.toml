@@ -12,3 +12,4 @@ byteorder = "1.2.6"
 [dev-dependencies]
 pcarp = "1.0.0"
 pnet_packet = "0.21.0"
+lazy_static = "1.2.0"

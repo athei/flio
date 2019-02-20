@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{ PathBuf };
 use smb2::{ Request, V1Request };
 use pcarp::Capture;
 use pnet_packet::Packet;
@@ -6,6 +6,7 @@ use pnet_packet::ethernet::{ EthernetPacket, EtherTypes };
 use pnet_packet::ipv4::Ipv4Packet;
 use pnet_packet::ipv6::Ipv6Packet;
 use pnet_packet::tcp::TcpPacket;
+use lazy_static::lazy_static;
 
 pub enum CombinedRequest<'a> {
 	V1(V1Request),
@@ -21,6 +22,14 @@ enum IPPacket<'a> {
     V6(Ipv6Packet<'a>),
 }
 
+lazy_static! {
+    static ref test_dir: PathBuf = {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("tests/data/");
+        path
+    };
+}
+
 fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
     match packet {
         IPPacket::V4(p) => p.payload(),
@@ -28,8 +37,12 @@ fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
     }
 }
 
-pub fn parse_pcap<'a>(path: &Path, buffer: &'a mut Vec<u8>) -> Result<RequestList<'a>, ()> {
+pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<RequestList<'a>, ()> {
     use std::fs::File;
+
+    let mut path: PathBuf = test_dir.clone();
+    path.push(name);
+    path.set_extension("pcapng");
 
     let file = File::open(path).unwrap();
     let mut pcap = Capture::new(file).unwrap();
