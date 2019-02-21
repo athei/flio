@@ -1,7 +1,7 @@
 #![warn(clippy::all)]
 
+pub mod header;
 mod transport;
-mod header;
 mod smb1;
 mod command;
 
