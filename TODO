@@ -1,2 +1,3 @@
 - Remove command field from smb2 (not necessary)
 - NT status enum for smb1
+- cargo fmt

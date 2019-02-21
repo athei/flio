@@ -1,8 +1,8 @@
 #![warn(clippy::all)]
 
 pub mod header;
+pub mod smb1;
 mod transport;
-mod smb1;
 mod command;
 
 use nom::*;
