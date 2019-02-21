@@ -13,8 +13,20 @@ pub enum CombinedRequest<'a> {
 	V2(Request<'a>)
 }
 
-pub struct RequestList<'a> {
-    pub requests: Vec<CombinedRequest<'a>>,
+impl<'a> CombinedRequest<'a> {
+    pub fn unwrap_v1(&self) -> &V1Request {
+        match self {
+            CombinedRequest::V1(x) => x,
+            _ => panic!("Request is not V1")
+        }
+    }
+
+    pub fn unwrap_v2(&self) -> &Request<'a> {
+        match self {
+            CombinedRequest::V2(x) => x,
+            _ => panic!("Request is not V2")
+        }
+    }
 }
 
 enum IPPacket<'a> {
@@ -37,7 +49,7 @@ fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
     }
 }
 
-pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<RequestList<'a>, ()> {
+pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<Vec<CombinedRequest<'a>>, ()> {
     use std::fs::File;
 
     let mut path: PathBuf = test_dir.clone();
@@ -103,5 +115,5 @@ pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<RequestList
         };
     }
 
-    Ok(RequestList { requests })
+    Ok(requests)
 }
