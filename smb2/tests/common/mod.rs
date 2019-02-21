@@ -13,6 +13,7 @@ pub enum CombinedRequest<'a> {
 	V2(Request<'a>)
 }
 
+#[allow(dead_code)]
 impl<'a> CombinedRequest<'a> {
     pub fn unwrap_v1(&self) -> &V1Request {
         match self {
