@@ -1,5 +1,6 @@
 use std::path::{ PathBuf };
-use smb2::{ Request, V1Request };
+use smb2::Request;
+use smb2::smb1::Request as V1Request;
 use pcarp::Capture;
 use pnet_packet::Packet;
 use pnet_packet::ethernet::{ EthernetPacket, EtherTypes };

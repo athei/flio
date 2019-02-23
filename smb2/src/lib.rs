@@ -1,14 +1,12 @@
 #![warn(clippy::all)]
 
+mod transport;
+
 pub mod header;
 pub mod smb1;
-mod transport;
-mod command;
+pub mod command;
 
 use nom::*;
-
-pub use crate::smb1::Request as V1Request;
-pub use crate::smb1::DialectLevel as V1Dialect;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub enum Dialect {

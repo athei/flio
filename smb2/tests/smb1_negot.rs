@@ -3,14 +3,14 @@
 mod common;
 
 use crate::common::parse_pcap;
-use smb2::smb1::{ Flags, Flags2 };
+use smb2::smb1::{ DialectLevel, Flags, Flags2 };
 
 #[test]
 fn smb1_negot_req_smb2plus() {
     let mut buffer = Vec::new();
     let req = &parse_pcap("smb1_negot_req_smb2plus", &mut buffer).unwrap()[0];
     let v1 = req.unwrap_v1();
-    assert_eq!(v1.negotiate.level, smb2::V1Dialect::Smb2Plus);
+    assert_eq!(v1.negotiate.level, DialectLevel::Smb2Plus);
 
     // check header
     let header = &v1.header;
@@ -29,7 +29,7 @@ fn smb1_negot_req_not_supported() {
     let mut buffer = Vec::new();
     let req = &parse_pcap("smb1_negot_req_not_supported", &mut buffer).unwrap()[0];
     let v1 = req.unwrap_v1();
-    assert_eq!(v1.negotiate.level, smb2::V1Dialect::NotSupported);
+    assert_eq!(v1.negotiate.level, DialectLevel::NotSupported);
 
     // check header
     let header = &v1.header;
