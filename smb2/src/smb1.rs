@@ -82,6 +82,7 @@ fn merge_pid(high: u16, low: u16) -> u32 {
     (u32::from(high) << 16) + u32::from(low)
 }
 
+#[rustfmt::skip]
 fn parse_header(input: &[u8]) -> IResult<&[u8], (Header, &[u8])> {
     do_parse!(input,
         tag!(b"\xffSMB") >>
@@ -127,6 +128,7 @@ fn parse_dialects(input: &[u8]) -> IResult<&[u8], DialectLevel> {
     fold_many1!(input, complete!(extract_dialect), DialectLevel::NotSupported, fold_dialect)
 }
 
+#[rustfmt::skip]
 fn parse_negotiate_request(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
     do_parse!(input,
         tag!(b"\x00") >> /* word count */

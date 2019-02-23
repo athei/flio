@@ -58,6 +58,7 @@ fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u3
 }
 
 #[allow(clippy::cyclomatic_complexity)]
+#[rustfmt::skip]
 pub fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8], (Header, &[u8])> {
     do_parse!(input,
         tag!(b"\xfeSMB") >>
