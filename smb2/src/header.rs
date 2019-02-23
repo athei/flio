@@ -18,6 +18,12 @@ bitflags! {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub enum SyncType {
+    Async { async_id: u64 },
+    Sync { tree_id: u32 }
+}
+
 #[derive(Debug)]
 pub struct Header {
     pub credit_charge: Option<u16>,
@@ -27,8 +33,7 @@ pub struct Header {
     pub credit_req_grant: u16,
     pub flags: Flags,
     pub message_id: u64,
-    pub async_id: Option<u64>,
-    pub tree_id: Option<u32>,
+    pub sync_type: SyncType,
     pub session_id: u64,
     pub signature: [u8; SIG_SIZE],
 }
@@ -92,8 +97,13 @@ pub fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8]
             credit_req_grant,
             flags,
             message_id,
-            async_id,
-            tree_id,
+            sync_type: {
+                if let Some(tree_id) = tree_id {
+                    SyncType::Sync { tree_id }
+                } else {
+                    SyncType::Async { async_id: async_id.unwrap() }
+                }
+            },
             session_id,
             signature,
         }, body)

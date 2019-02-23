@@ -3,6 +3,7 @@
 mod common;
 
 use crate::common::parse_pcap;
+use smb2::header::SyncType;
 
 #[test]
 fn all_requests_just_parse() {
@@ -31,8 +32,7 @@ fn header1() {
     assert_eq!(header.credit_req_grant, 52);
     assert_eq!(header.flags, smb2::header::Flags::empty());
     assert_eq!(header.message_id, 15);
-    assert_eq!(header.async_id, None);
-    assert_eq!(header.tree_id, Some(5));
+    assert_eq!(header.sync_type, SyncType::Sync { tree_id: 5 });
     assert_eq!(header.session_id, 0x0000_0400_0000_0005);
     assert_eq!(header.signature, [0; 16]);
 }
