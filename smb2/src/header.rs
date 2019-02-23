@@ -1,6 +1,6 @@
-use byteorder::{BigEndian, ByteOrder};
-use bitflags::bitflags;
 use crate::Dialect;
+use bitflags::bitflags;
+use byteorder::{BigEndian, ByteOrder};
 use nom::*;
 
 const SMB_HEADER_LEN: usize = 64;
@@ -41,19 +41,23 @@ fn copy_sig(input: &[u8]) -> [u8; SIG_SIZE] {
 
 fn derive_channel_sequence(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u16> {
     if is_response {
-        return None
+        return None;
     }
 
     match dialect {
-        Dialect::Smb3_0_0 | Dialect::Smb3_0_2 | Dialect::Smb3_1_1 => Some(BigEndian::read_u16(input)),
-        _ => None
+        Dialect::Smb3_0_0 | Dialect::Smb3_0_2 | Dialect::Smb3_1_1 => {
+            Some(BigEndian::read_u16(input))
+        }
+        _ => None,
     }
 }
 
 fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u32> {
     match dialect {
-        Dialect::Smb2_0_2 | Dialect::Smb2_1_0 | _ if is_response => Some(BigEndian::read_u32(input)),
-        _ => None
+        Dialect::Smb2_0_2 | Dialect::Smb2_1_0 | _ if is_response => {
+            Some(BigEndian::read_u32(input))
+        }
+        _ => None,
     }
 }
 

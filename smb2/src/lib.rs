@@ -2,9 +2,9 @@
 
 mod transport;
 
+pub mod command;
 pub mod header;
 pub mod smb1;
-pub mod command;
 
 use nom::*;
 
@@ -20,20 +20,26 @@ pub enum Dialect {
 #[derive(Debug)]
 pub struct Request<'a> {
     pub header: header::Header,
-    pub body: &'a[u8]
+    pub body: &'a [u8],
 }
 
-pub fn parse_request_complete(input: &[u8], dialect: Dialect) -> Result<Vec<Request>, nom::Err<&[u8]>> {
+pub fn parse_request_complete(
+    input: &[u8],
+    dialect: Dialect,
+) -> Result<Vec<Request>, nom::Err<&[u8]>> {
     let mut result = Vec::new();
     let mut cur = input;
     loop {
         match complete!(cur, apply!(header::parse, dialect, false)) {
             Ok((remainder, output)) => {
-                result.push(Request { header: output.0, body: output.1 });
+                result.push(Request {
+                    header: output.0,
+                    body: output.1,
+                });
                 if remainder.is_empty() {
                     break;
                 }
-               cur = remainder;
+                cur = remainder;
             }
             Err(x) => return Err(x),
         }
@@ -51,7 +57,10 @@ pub fn parse_request(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Reque
 pub fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, nom::Err<&[u8]>> {
     match complete!(input, smb1::parse_negotiate) {
         Ok((rem, out)) => {
-            assert!(rem.is_empty(), "Only pass complete segments into this function");
+            assert!(
+                rem.is_empty(),
+                "Only pass complete segments into this function"
+            );
             Ok(out)
         }
         Err(x) => Err(x),

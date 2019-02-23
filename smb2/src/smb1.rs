@@ -42,9 +42,9 @@ pub enum DialectLevel {
 impl<'a> From<&'a [u8]> for DialectLevel {
     fn from(bytes: &'a [u8]) -> DialectLevel {
         match bytes {
-           b"SMB 2.002" => DialectLevel::Smb2,
-           b"SMB 2.???" => DialectLevel::Smb2Plus,
-           _ => DialectLevel::NotSupported
+            b"SMB 2.002" => DialectLevel::Smb2,
+            b"SMB 2.???" => DialectLevel::Smb2Plus,
+            _ => DialectLevel::NotSupported,
         }
     }
 }
@@ -69,7 +69,7 @@ pub struct NegotiateRequest {
 #[derive(Debug)]
 pub struct Request {
     pub header: Header,
-    pub negotiate: NegotiateRequest
+    pub negotiate: NegotiateRequest,
 }
 
 fn copy_sig(input: &[u8]) -> [u8; SIG_SIZE] {
@@ -116,16 +116,18 @@ fn fold_dialect(accu: DialectLevel, add: &[u8]) -> DialectLevel {
     std::cmp::max(accu, add.into())
 }
 
-named!(extract_dialect,
-    delimited!(
-       tag!(b"\x02"),
-       is_not!("b\x00"),
-       tag!(b"\x00")
-    )
+named!(
+    extract_dialect,
+    delimited!(tag!(b"\x02"), is_not!("b\x00"), tag!(b"\x00"))
 );
 
 fn parse_dialects(input: &[u8]) -> IResult<&[u8], DialectLevel> {
-    fold_many1!(input, complete!(extract_dialect), DialectLevel::NotSupported, fold_dialect)
+    fold_many1!(
+        input,
+        complete!(extract_dialect),
+        DialectLevel::NotSupported,
+        fold_dialect
+    )
 }
 
 #[rustfmt::skip]
@@ -141,7 +143,13 @@ fn parse_negotiate_request(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
 
 pub fn parse_negotiate(input: &[u8]) -> IResult<&[u8], Request> {
     match parse_header(input) {
-        Ok((rem, (header, body))) => Ok((rem, Request { header, negotiate: (parse_negotiate_request(body)?).1 })),
-        Err(x) => Err(x)
+        Ok((rem, (header, body))) => Ok((
+            rem,
+            Request {
+                header,
+                negotiate: (parse_negotiate_request(body)?).1,
+            },
+        )),
+        Err(x) => Err(x),
     }
 }
