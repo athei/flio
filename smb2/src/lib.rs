@@ -20,6 +20,7 @@ pub enum Dialect {
 #[derive(Debug)]
 pub struct Request<'a> {
     pub header: header::Header,
+    pub command: command::Command,
     pub body: &'a [u8],
 }
 
@@ -33,8 +34,9 @@ pub fn parse_request_complete(
         match complete!(cur, apply!(header::parse, dialect, false)) {
             Ok((remainder, output)) => {
                 result.push(Request {
-                    header: output.0,
-                    body: output.1,
+                    header: output.header,
+                    command: output.command,
+                    body: output.body,
                 });
                 if remainder.is_empty() {
                     break;

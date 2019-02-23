@@ -8,6 +8,8 @@ edition = "2018"
 nom = "4.1.0"
 bitflags = "1.0.4"
 byteorder = "1.2.6"
+num-traits = "0.2"
+num-derive = "0.2"
 
 [dev-dependencies]
 pcarp = "1.0.0"
