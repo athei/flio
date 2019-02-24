@@ -21,14 +21,14 @@ pub enum Dialect {
 
 #[derive(Debug)]
 pub struct Request<'a> {
-    pub header: header::Header,
+    pub header: header::RequestHeader,
     pub command: Command,
     pub body: &'a [u8],
 }
 
 #[derive(Debug)]
 pub struct Response<'a> {
-    pub header: header::Header,
+    pub header: header::ResponseHeader,
     pub body: Result<(command::Command, &'a [u8]), ErrorResponse>
 }
 
@@ -36,10 +36,10 @@ pub fn parse_request_complete(
     input: &[u8],
     dialect: Dialect,
 ) -> Result<Vec<Request>, nom::Err<&[u8]>> {
-    let mut result = Vec::new();
+    let mut result: Vec<Request> = Vec::new();
     let mut cur = input;
     loop {
-        match complete!(cur, apply!(header::parse, dialect, false)) {
+        match complete!(cur, apply!(header::parse, dialect)) {
             Ok((remainder, output)) => {
                 result.push(Request {
                     header: output.header,

@@ -1,1 +1,2 @@
 - replace nom* with explicit macros
+- do not copy sign : take as slice
