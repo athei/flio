@@ -4,6 +4,7 @@ mod transport;
 
 pub mod command;
 pub mod smb1;
+pub mod error;
 
 use bitflags::bitflags;
 use byteorder::{LittleEndian, ByteOrder};
@@ -45,6 +46,12 @@ pub struct Request<'a> {
     pub header: Header,
     pub command: command::Command,
     pub body: &'a [u8],
+}
+
+#[derive(Debug)]
+pub struct Response<'a> {
+    pub header: Header,
+    pub body: Result<(command::Command, &'a [u8]), error::ErrorResponse>
 }
 
 #[derive(Debug)]
