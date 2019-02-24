@@ -10,7 +10,7 @@ use byteorder::{BigEndian, ByteOrder};
 use nom::*;
 use num_traits::FromPrimitive;
 
-pub const SMB_HEADER_LEN: usize = 64;
+pub const HEADER_LEN: usize = 64;
 pub const SIG_SIZE: usize = 16;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
@@ -93,7 +93,7 @@ fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u3
 fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8], Request> {
     do_parse!(input,
         tag!(b"\xfeSMB") >>
-        verify!(le_u16, |v| v == SMB_HEADER_LEN as u16) >>
+        verify!(le_u16, |v| v == HEADER_LEN as u16) >>
         credit_charge: cond!(dialect > Dialect::Smb2_0_2, le_u16) >>
         status: take!(4) >>
         command: map_opt!(le_u16, FromPrimitive::from_u16) >>
@@ -107,8 +107,8 @@ fn parse(input: &[u8], dialect: Dialect, is_response: bool) -> IResult<&[u8], Re
         async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
         session_id: le_u64 >>
         signature: map!(take!(SIG_SIZE), copy_sig) >>
-        body: switch!(value!(next_command > SMB_HEADER_LEN as u32),
-            true => take!(next_command - SMB_HEADER_LEN as u32) |
+        body: switch!(value!(next_command > HEADER_LEN as u32),
+            true => take!(next_command - HEADER_LEN as u32) |
             false => call!(rest)
         ) >>
         ( Request {
