@@ -65,5 +65,5 @@ fn smb1_negot_req_not_supported() {
     assert_eq!(header.pid, 65279);
     assert_eq!(header.uid, 0);
     assert_eq!(header.mid, 0);
-    assert_eq!(header.signature, [0; 8])
+    assert_eq!(header.signature, [0; smb2::smb1::SIG_SIZE])
 }

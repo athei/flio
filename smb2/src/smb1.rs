@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use nom::*;
 
-const SIG_SIZE: usize = 8;
+pub const SIG_SIZE: usize = 8;
 
 bitflags! {
     pub struct Flags: u8 {
