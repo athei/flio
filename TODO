@@ -1,2 +1,1 @@
-- Remove command field from smb2 (not necessary)
-- remove byteorder?
+- replace nom* with explicit macros

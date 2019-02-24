@@ -6,7 +6,7 @@ pub mod command;
 pub mod smb1;
 
 use bitflags::bitflags;
-use byteorder::{BigEndian, ByteOrder};
+use byteorder::{LittleEndian, ByteOrder};
 use nom::*;
 use num_traits::FromPrimitive;
 
@@ -73,7 +73,7 @@ fn derive_channel_sequence(input: &[u8], dialect: Dialect, is_response: bool) ->
 
     match dialect {
         Dialect::Smb3_0_0 | Dialect::Smb3_0_2 | Dialect::Smb3_1_1 => {
-            Some(BigEndian::read_u16(input))
+            Some(LittleEndian::read_u16(input))
         }
         _ => None,
     }
@@ -82,7 +82,7 @@ fn derive_channel_sequence(input: &[u8], dialect: Dialect, is_response: bool) ->
 fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u32> {
     match dialect {
         Dialect::Smb2_0_2 | Dialect::Smb2_1_0 | _ if is_response => {
-            Some(BigEndian::read_u32(input))
+            Some(LittleEndian::read_u32(input))
         }
         _ => None,
     }
