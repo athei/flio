@@ -3,7 +3,7 @@
 mod common;
 
 use crate::common::parse_pcap;
-use smb2::smb1::{DialectLevel, Flags, Flags2};
+use smb2::smb1::{DialectLevel, Flags, Flags2, Signature};
 
 #[test]
 fn smb1_negot_req_smb2plus() {
@@ -34,7 +34,7 @@ fn smb1_negot_req_smb2plus() {
     assert_eq!(header.pid, 65279);
     assert_eq!(header.uid, 0);
     assert_eq!(header.mid, 0);
-    assert_eq!(header.signature, [0; 8])
+    assert_eq!(header.signature, Signature::empty())
 }
 
 #[test]
@@ -65,5 +65,5 @@ fn smb1_negot_req_not_supported() {
     assert_eq!(header.pid, 65279);
     assert_eq!(header.uid, 0);
     assert_eq!(header.mid, 0);
-    assert_eq!(header.signature, [0; smb2::smb1::SIG_SIZE])
+    assert_eq!(header.signature, Signature::empty())
 }

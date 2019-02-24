@@ -2,6 +2,7 @@ use bitflags::bitflags;
 use byteorder::{ByteOrder, LittleEndian};
 use nom::*;
 use num_traits::FromPrimitive;
+use std::ops::Deref;
 
 use crate::command::Command;
 use crate::Dialect;
@@ -27,6 +28,23 @@ pub enum SyncType {
     Sync { tree_id: u32 },
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Signature([u8; SIG_SIZE]);
+
+impl Signature {
+    pub fn empty() -> Signature {
+        Signature([0; SIG_SIZE])
+    }
+}
+
+impl Deref for Signature {
+    type Target = [u8; SIG_SIZE];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 pub trait Header
 where
     Self: Sized,
@@ -43,7 +61,7 @@ where
         message_id: u64,
         sync_type: SyncType,
         session_id: u64,
-        signature: [u8; SIG_SIZE],
+        signature: Signature,
     ) -> Self;
 
     fn get_status(&self) -> Option<u32>;
@@ -107,7 +125,7 @@ pub struct RequestHeader {
     pub message_id: u64,
     pub sync_type: SyncType,
     pub session_id: u64,
-    pub signature: [u8; SIG_SIZE],
+    pub signature: Signature,
 }
 
 #[derive(Debug)]
@@ -119,7 +137,7 @@ pub struct ResponseHeader {
     pub message_id: u64,
     pub sync_type: SyncType,
     pub session_id: u64,
-    pub signature: [u8; SIG_SIZE],
+    pub signature: Signature,
 }
 
 pub struct ParseResult<'a, T>
@@ -143,7 +161,7 @@ impl Header for RequestHeader {
         message_id: u64,
         sync_type: SyncType,
         session_id: u64,
-        signature: [u8; SIG_SIZE],
+        signature: Signature,
     ) -> Self {
         RequestHeader {
             credit_charge,
@@ -174,7 +192,7 @@ impl Header for ResponseHeader {
         message_id: u64,
         sync_type: SyncType,
         session_id: u64,
-        signature: [u8; SIG_SIZE],
+        signature: Signature,
     ) -> Self {
         ResponseHeader {
             credit_charge,
@@ -206,10 +224,10 @@ where
     }
 }
 
-fn copy_sig(input: &[u8]) -> [u8; SIG_SIZE] {
+fn copy_sig(input: &[u8]) -> Signature {
     let mut ret = [0; SIG_SIZE];
     ret.copy_from_slice(input);
-    ret
+    Signature(ret)
 }
 
 fn derive_channel_sequence(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u16> {

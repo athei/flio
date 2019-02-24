@@ -1,3 +1,2 @@
 - replace nom* with explicit macros
-- Newtype pattern for signature
 - replace status with NT error enum

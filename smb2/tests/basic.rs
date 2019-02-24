@@ -35,7 +35,7 @@ fn header1() {
     assert_eq!(header.message_id, 15);
     assert_eq!(header.sync_type, SyncType::Sync { tree_id: 5 });
     assert_eq!(header.session_id, 0x0000_0400_0000_0005);
-    assert_eq!(header.signature, [0; smb2::header::SIG_SIZE]);
+    assert_eq!(header.signature, smb2::header::Signature::empty());
 
     match &request.body {
         RequestBody::NotImplemented { command, .. } => assert_eq!(*command, Command::QueryInfo),

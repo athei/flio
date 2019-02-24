@@ -1,5 +1,6 @@
 use bitflags::bitflags;
 use nom::*;
+use std::ops::Deref;
 
 pub const SIG_SIZE: usize = 8;
 
@@ -32,6 +33,23 @@ bitflags! {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Signature([u8; SIG_SIZE]);
+
+impl Signature {
+    pub fn empty() -> Signature {
+        Signature([0; SIG_SIZE])
+    }
+}
+
+impl Deref for Signature {
+    type Target = [u8; SIG_SIZE];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum DialectLevel {
     NotSupported,
@@ -58,7 +76,7 @@ pub struct Header {
     pub pid: u32,
     pub uid: u16,
     pub mid: u16,
-    pub signature: [u8; SIG_SIZE],
+    pub signature: Signature,
 }
 
 #[derive(Debug)]
@@ -72,10 +90,10 @@ pub struct Request {
     pub negotiate: NegotiateRequest,
 }
 
-fn copy_sig(input: &[u8]) -> [u8; SIG_SIZE] {
+fn copy_sig(input: &[u8]) -> Signature {
     let mut ret = [0; SIG_SIZE];
     ret.copy_from_slice(input);
-    ret
+    Signature(ret)
 }
 
 fn merge_pid(high: u16, low: u16) -> u32 {
@@ -107,7 +125,7 @@ fn parse_header(input: &[u8]) -> IResult<&[u8], (Header, &[u8])> {
             pid: merge_pid(pid_high, pid_low),
             uid,
             mid,
-            signature
+            signature,
         }, body)
     )
 }
