@@ -27,7 +27,10 @@ pub enum SyncType {
     Sync { tree_id: u32 },
 }
 
-pub trait Header {
+pub trait Header
+where
+    Self: Sized,
+{
     const IS_RESPONSE: bool;
 
     #[allow(clippy::too_many_arguments)]
@@ -44,6 +47,55 @@ pub trait Header {
     ) -> Self;
 
     fn get_status(&self) -> Option<u32>;
+
+    #[allow(clippy::cyclomatic_complexity)]
+    #[rustfmt::skip]
+    fn parse<'a>(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], ParseResult<Self>>
+    {
+        do_parse!(input,
+            tag!(b"\xfeSMB") >>
+            verify!(le_u16, |v| v == HEADER_LEN as u16) >>
+            credit_charge: cond!(dialect > Dialect::Smb2_0_2, le_u16) >>
+            status: take!(4) >>
+            command: map_opt!(le_u16, FromPrimitive::from_u16) >>
+            credit_req_grant: le_u16 >>
+            flags: map_opt!(le_u32, Flags::from_bits) >>
+            verify!(value!(flags.contains(Flags::SERVER_TO_REDIR)), |val| val == Self::IS_RESPONSE) >>
+            next_command: le_u32 >>
+            message_id: le_u64 >>
+            cond!(!flags.contains(Flags::ASYNC_COMMAND), take!(4)) >>
+            tree_id: cond!(!flags.contains(Flags::ASYNC_COMMAND), le_u32) >>
+            async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
+            session_id: le_u64 >>
+            signature: map!(take!(SIG_SIZE), copy_sig) >>
+            body: switch!(value!(next_command > HEADER_LEN as u32),
+                true => take!(next_command - HEADER_LEN as u32) |
+                false => call!(rest)
+            ) >>
+            (
+                ParseResult::<Self>::new( Self::new (
+                        credit_charge,
+                        credit_req_grant,
+                        derive_channel_sequence(status, dialect, Self::IS_RESPONSE),
+                        derive_status(status, dialect, Self::IS_RESPONSE),
+                        flags,
+                        message_id,
+                        {
+                            if let Some(tree_id) = tree_id {
+                                SyncType::Sync { tree_id }
+                            } else {
+                                SyncType::Async { async_id: async_id.unwrap() }
+                            }
+                        },
+                        session_id,
+                        signature,
+                    ),
+                    command,
+                    body
+                )
+            )
+        )
+    }
 }
 
 #[derive(Debug)]
@@ -180,54 +232,4 @@ fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u3
         }
         _ => None,
     }
-}
-
-#[allow(clippy::cyclomatic_complexity)]
-#[rustfmt::skip]
-pub fn parse<'a, T>(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], ParseResult<T>>
-    where T: Header
-{
-    do_parse!(input,
-        tag!(b"\xfeSMB") >>
-        verify!(le_u16, |v| v == HEADER_LEN as u16) >>
-        credit_charge: cond!(dialect > Dialect::Smb2_0_2, le_u16) >>
-        status: take!(4) >>
-        command: map_opt!(le_u16, FromPrimitive::from_u16) >>
-        credit_req_grant: le_u16 >>
-        flags: map_opt!(le_u32, Flags::from_bits) >>
-        verify!(value!(flags.contains(Flags::SERVER_TO_REDIR)), |val| val == T::IS_RESPONSE) >>
-        next_command: le_u32 >>
-        message_id: le_u64 >>
-        cond!(!flags.contains(Flags::ASYNC_COMMAND), take!(4)) >>
-        tree_id: cond!(!flags.contains(Flags::ASYNC_COMMAND), le_u32) >>
-        async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
-        session_id: le_u64 >>
-        signature: map!(take!(SIG_SIZE), copy_sig) >>
-        body: switch!(value!(next_command > HEADER_LEN as u32),
-            true => take!(next_command - HEADER_LEN as u32) |
-            false => call!(rest)
-        ) >>
-        (
-            ParseResult::<T>::new( T::new (
-                    credit_charge,
-                    credit_req_grant,
-                    derive_channel_sequence(status, dialect, T::IS_RESPONSE),
-                    derive_status(status, dialect, T::IS_RESPONSE),
-                    flags,
-                    message_id,
-                    {
-                        if let Some(tree_id) = tree_id {
-                            SyncType::Sync { tree_id }
-                        } else {
-                            SyncType::Async { async_id: async_id.unwrap() }
-                        }
-                    },
-                    session_id,
-                    signature,
-                ),
-                command,
-                body
-            )
-        )
-    )
 }

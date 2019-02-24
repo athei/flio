@@ -72,7 +72,7 @@ where
         let mut result = Vec::new();
         let mut cur = input;
         loop {
-            match complete!(cur, apply!(header::parse::<Self::Header>, dialect)) {
+            match complete!(cur, apply!(Self::Header::parse, dialect)) {
                 Ok((remainder, output)) => {
                     let status = output.header.get_status();
                     result.push(Self::new(
