@@ -1,7 +1,7 @@
-use byteorder::{LittleEndian, ByteOrder};
-use num_traits::FromPrimitive;
 use bitflags::bitflags;
+use byteorder::{ByteOrder, LittleEndian};
 use nom::*;
+use num_traits::FromPrimitive;
 
 use crate::command::Command;
 use crate::Dialect;
@@ -40,7 +40,7 @@ pub trait Header {
         message_id: u64,
         sync_type: SyncType,
         session_id: u64,
-        signature: [u8; SIG_SIZE]
+        signature: [u8; SIG_SIZE],
     ) -> Self;
 }
 
@@ -69,7 +69,8 @@ pub struct ResponseHeader {
 }
 
 pub struct ParseResult<'a, T>
-    where T: Header
+where
+    T: Header,
 {
     pub header: T,
     pub command: Command,
@@ -88,9 +89,8 @@ impl Header for RequestHeader {
         message_id: u64,
         sync_type: SyncType,
         session_id: u64,
-        signature: [u8; SIG_SIZE]
-    ) -> Self
-    {
+        signature: [u8; SIG_SIZE],
+    ) -> Self {
         RequestHeader {
             credit_charge,
             credit_request: credit_req_resp,
@@ -99,7 +99,7 @@ impl Header for RequestHeader {
             message_id,
             sync_type,
             session_id,
-            signature
+            signature,
         }
     }
 }
@@ -116,9 +116,8 @@ impl Header for ResponseHeader {
         message_id: u64,
         sync_type: SyncType,
         session_id: u64,
-        signature: [u8; SIG_SIZE]
-    ) -> Self
-    {
+        signature: [u8; SIG_SIZE],
+    ) -> Self {
         ResponseHeader {
             credit_charge,
             credit_response: credit_req_resp,
@@ -127,19 +126,20 @@ impl Header for ResponseHeader {
             message_id,
             sync_type,
             session_id,
-            signature
+            signature,
         }
     }
 }
 
 impl<'a, T> ParseResult<'a, T>
-    where T: Header
+where
+    T: Header,
 {
     fn new(header: T, command: Command, body: &'a [u8]) -> Self {
         ParseResult {
             header,
             command,
-            body
+            body,
         }
     }
 }

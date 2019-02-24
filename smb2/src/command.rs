@@ -26,10 +26,33 @@ pub enum Command {
     OplockBreak = 0x12,
 }
 
-pub enum RequestBody {
+#[derive(Debug)]
+pub enum RequestBody<'a> {
     Negotiate(negotiate::NegotiateRequest),
+    NotImplemented { command: Command, body: &'a [u8] },
 }
 
-pub enum ReponseBody {
-    Negotiate(negotiate::NegotiateResponse)
+#[derive(Debug)]
+pub enum ReponseBody<'a> {
+    Negotiate(negotiate::NegotiateResponse),
+    NotImplemented { command: Command, body: &'a [u8] },
+}
+
+pub trait Body<'a>
+where
+    Self: Sized,
+{
+    fn parse(command: Command, body: &'a [u8]) -> Result<Self, nom::Err<&'a [u8]>>;
+}
+
+impl<'a> Body<'a> for RequestBody<'a> {
+    fn parse(command: Command, body: &'a [u8]) -> Result<Self, nom::Err<&'a [u8]>> {
+        Ok(RequestBody::NotImplemented { command, body })
+    }
+}
+
+impl<'a> Body<'a> for ReponseBody<'a> {
+    fn parse(command: Command, body: &'a [u8]) -> Result<Self, nom::Err<&'a [u8]>> {
+        Ok(ReponseBody::NotImplemented { command, body })
+    }
 }

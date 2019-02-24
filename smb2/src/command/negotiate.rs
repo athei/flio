@@ -4,7 +4,7 @@ use num_derive::FromPrimitive;
 #[derive(FromPrimitive)]
 enum SecurityMode {
     SigningEnabled = 0x01,
-    SigningRequired = 0x02
+    SigningRequired = 0x02,
 }
 
 bitflags! {
@@ -19,10 +19,8 @@ bitflags! {
     }
 }
 
-pub struct NegotiateRequest {
+#[derive(Debug)]
+pub struct NegotiateRequest {}
 
-}
-
-pub struct NegotiateResponse {
-
-}
+#[derive(Debug)]
+pub struct NegotiateResponse {}

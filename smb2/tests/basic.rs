@@ -2,7 +2,7 @@
 
 mod common;
 
-use smb2::command::Command;
+use smb2::command::{Command, RequestBody};
 use smb2::header::SyncType;
 
 use crate::common::parse_pcap;
@@ -36,5 +36,9 @@ fn header1() {
     assert_eq!(header.sync_type, SyncType::Sync { tree_id: 5 });
     assert_eq!(header.session_id, 0x0000_0400_0000_0005);
     assert_eq!(header.signature, [0; smb2::header::SIG_SIZE]);
-    assert_eq!(request.command, Command::QueryInfo);
+
+    match &request.body {
+        RequestBody::NotImplemented { command, .. } => assert_eq!(*command, Command::QueryInfo),
+        _ => panic!("Expected not implemented!"),
+    };
 }

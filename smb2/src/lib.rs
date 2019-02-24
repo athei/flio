@@ -1,14 +1,14 @@
 #![warn(clippy::all)]
 
-mod transport;
-pub mod header;
 pub mod command;
+pub mod header;
 pub mod smb1;
+mod transport;
 
 use nom::*;
 
 use crate::command::error::ErrorResponse;
-use crate::command::Command;
+use crate::command::{Body, RequestBody};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub enum Dialect {
@@ -22,14 +22,13 @@ pub enum Dialect {
 #[derive(Debug)]
 pub struct Request<'a> {
     pub header: header::RequestHeader,
-    pub command: Command,
-    pub body: &'a [u8],
+    pub body: command::RequestBody<'a>,
 }
 
 #[derive(Debug)]
 pub struct Response<'a> {
     pub header: header::ResponseHeader,
-    pub body: Result<(command::Command, &'a [u8]), ErrorResponse>
+    pub body: Result<command::ReponseBody<'a>, (u32, ErrorResponse)>,
 }
 
 pub fn parse_request_complete(
@@ -43,8 +42,7 @@ pub fn parse_request_complete(
             Ok((remainder, output)) => {
                 result.push(Request {
                     header: output.header,
-                    command: output.command,
-                    body: output.body,
+                    body: RequestBody::parse(output.command, output.body)?,
                 });
                 if remainder.is_empty() {
                     break;
