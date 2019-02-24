@@ -1,7 +1,9 @@
+pub mod error;
+pub mod negotiate;
+
 use num_derive::FromPrimitive;
 
 #[derive(Debug, FromPrimitive, PartialEq)]
-#[repr(u16)]
 pub enum Command {
     Negotiate = 0x00,
     SessionSetup = 0x01,
@@ -22,4 +24,12 @@ pub enum Command {
     QueryInfo = 0x10,
     SetInfo = 0x11,
     OplockBreak = 0x12,
+}
+
+pub enum RequestBody {
+    Negotiate(negotiate::NegotiateRequest),
+}
+
+pub enum ReponseBody {
+    Negotiate(negotiate::NegotiateResponse)
 }
