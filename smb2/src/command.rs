@@ -35,6 +35,7 @@ pub enum RequestBody<'a> {
 #[derive(Debug)]
 pub enum ReponseBody<'a> {
     Negotiate(negotiate::NegotiateResponse),
+    Error(error::ErrorResponse),
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
@@ -42,17 +43,35 @@ pub trait Body<'a>
 where
     Self: Sized,
 {
-    fn parse(command: Command, body: &'a [u8]) -> Result<Self, nom::Err<&'a [u8]>>;
+    fn parse(
+        command: Command,
+        body: &'a [u8],
+        status: Option<u32>,
+    ) -> Result<Self, nom::Err<&'a [u8]>>;
 }
 
 impl<'a> Body<'a> for RequestBody<'a> {
-    fn parse(command: Command, body: &'a [u8]) -> Result<Self, nom::Err<&'a [u8]>> {
+    fn parse(
+        command: Command,
+        body: &'a [u8],
+        _status: Option<u32>,
+    ) -> Result<Self, nom::Err<&'a [u8]>> {
         Ok(RequestBody::NotImplemented { command, body })
     }
 }
 
 impl<'a> Body<'a> for ReponseBody<'a> {
-    fn parse(command: Command, body: &'a [u8]) -> Result<Self, nom::Err<&'a [u8]>> {
-        Ok(ReponseBody::NotImplemented { command, body })
+    fn parse(
+        command: Command,
+        body: &'a [u8],
+        status: Option<u32>,
+    ) -> Result<Self, nom::Err<&'a [u8]>> {
+        match status.unwrap() {
+            0 => Ok(ReponseBody::NotImplemented { command, body }),
+            x => Ok(ReponseBody::Error(error::ErrorResponse {
+                status: x,
+                command,
+            })),
+        }
     }
 }

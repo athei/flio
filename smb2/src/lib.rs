@@ -1,4 +1,5 @@
 #![warn(clippy::all)]
+#![allow(clippy::useless_attribute)]
 
 pub mod command;
 pub mod header;
@@ -7,8 +8,8 @@ mod transport;
 
 use nom::*;
 
-use crate::command::error::ErrorResponse;
-use crate::command::{Body, RequestBody};
+use crate::command::{Body, ReponseBody, RequestBody};
+use crate::header::{Header, RequestHeader, ResponseHeader};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub enum Dialect {
@@ -21,43 +22,19 @@ pub enum Dialect {
 
 #[derive(Debug)]
 pub struct Request<'a> {
-    pub header: header::RequestHeader,
-    pub body: command::RequestBody<'a>,
+    pub header: RequestHeader,
+    pub body: RequestBody<'a>,
 }
 
 #[derive(Debug)]
 pub struct Response<'a> {
-    pub header: header::ResponseHeader,
-    pub body: Result<command::ReponseBody<'a>, (u32, ErrorResponse)>,
-}
-
-pub fn parse_request_complete(
-    input: &[u8],
-    dialect: Dialect,
-) -> Result<Vec<Request>, nom::Err<&[u8]>> {
-    let mut result: Vec<Request> = Vec::new();
-    let mut cur = input;
-    loop {
-        match complete!(cur, apply!(header::parse, dialect)) {
-            Ok((remainder, output)) => {
-                result.push(Request {
-                    header: output.header,
-                    body: RequestBody::parse(output.command, output.body)?,
-                });
-                if remainder.is_empty() {
-                    break;
-                }
-                cur = remainder;
-            }
-            Err(x) => return Err(x),
-        }
-    }
-    Ok(result)
+    pub header: ResponseHeader,
+    pub body: ReponseBody<'a>,
 }
 
 pub fn parse_request(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Request>> {
     match transport::get_payload(input) {
-        Ok((rem, out)) => parse_request_complete(out, dialect).map(|i| (rem, i)),
+        Ok((rem, out)) => Request::parse(out, dialect).map(|i| (rem, i)),
         Err(x) => Err(x),
     }
 }
@@ -79,5 +56,55 @@ pub fn parse_smb1_nego_request(input: &[u8]) -> IResult<&[u8], smb1::Request> {
     match transport::get_payload(input) {
         Ok((rem, out)) => parse_smb1_nego_request_complete(out).map(|i| (rem, i)),
         Err(x) => Err(x),
+    }
+}
+
+trait Packet<'a>
+where
+    Self: Sized,
+{
+    type Header: Header;
+    type Body: Body<'a>;
+
+    fn new(header: Self::Header, body: Self::Body) -> Self;
+
+    fn parse(input: &'a [u8], dialect: Dialect) -> Result<Vec<Self>, nom::Err<&[u8]>> {
+        let mut result = Vec::new();
+        let mut cur = input;
+        loop {
+            match complete!(cur, apply!(header::parse::<Self::Header>, dialect)) {
+                Ok((remainder, output)) => {
+                    let status = output.header.get_status();
+                    result.push(Self::new(
+                        output.header,
+                        Self::Body::parse(output.command, output.body, status)?,
+                    ));
+                    if remainder.is_empty() {
+                        break;
+                    }
+                    cur = remainder;
+                }
+                Err(x) => return Err(x),
+            }
+        }
+        Ok(result)
+    }
+}
+
+impl<'a> Packet<'a> for Request<'a> {
+    type Header = RequestHeader;
+    type Body = RequestBody<'a>;
+
+    fn new(header: Self::Header, body: Self::Body) -> Self {
+        Request { header, body }
+    }
+}
+
+impl<'a> Packet<'a> for Response<'a> {
+    type Header = ResponseHeader;
+    type Body = ReponseBody<'a>;
+
+    fn new(header: Self::Header, body: Self::Body) -> Self {
+        Response { header, body }
     }
 }

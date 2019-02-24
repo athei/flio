@@ -1,2 +1,4 @@
 - replace nom* with explicit macros
-- do not copy sign : take as slice
+- Newtype pattern for signature
+- replace status with NT error enum
+- make header::parse a associated function

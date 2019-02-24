@@ -42,6 +42,8 @@ pub trait Header {
         session_id: u64,
         signature: [u8; SIG_SIZE],
     ) -> Self;
+
+    fn get_status(&self) -> Option<u32>;
 }
 
 #[derive(Debug)]
@@ -102,6 +104,10 @@ impl Header for RequestHeader {
             signature,
         }
     }
+
+    fn get_status(&self) -> Option<u32> {
+        None
+    }
 }
 
 impl Header for ResponseHeader {
@@ -128,6 +134,10 @@ impl Header for ResponseHeader {
             session_id,
             signature,
         }
+    }
+
+    fn get_status(&self) -> Option<u32> {
+        Some(self.status)
     }
 }
 
