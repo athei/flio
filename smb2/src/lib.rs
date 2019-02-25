@@ -4,6 +4,7 @@
 pub mod command;
 pub mod header;
 pub mod smb1;
+pub mod ntstatus;
 mod transport;
 
 use nom::*;

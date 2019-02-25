@@ -3,6 +3,8 @@ pub mod negotiate;
 
 use num_derive::FromPrimitive;
 
+use crate::ntstatus::NTStatus;
+
 #[derive(Debug, FromPrimitive, PartialEq)]
 pub enum Command {
     Negotiate = 0x00,
@@ -46,7 +48,7 @@ where
     fn parse(
         command: Command,
         body: &'a [u8],
-        status: Option<u32>,
+        status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>>;
 }
 
@@ -54,7 +56,7 @@ impl<'a> Body<'a> for RequestBody<'a> {
     fn parse(
         command: Command,
         body: &'a [u8],
-        _status: Option<u32>,
+        _status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>> {
         Ok(RequestBody::NotImplemented { command, body })
     }
@@ -64,14 +66,12 @@ impl<'a> Body<'a> for ReponseBody<'a> {
     fn parse(
         command: Command,
         body: &'a [u8],
-        status: Option<u32>,
+        status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>> {
-        match status.unwrap() {
-            0 => Ok(ReponseBody::NotImplemented { command, body }),
-            x => Ok(ReponseBody::Error(error::ErrorResponse {
-                status: x,
-                command,
-            })),
+        let status = status.unwrap();
+        if !status.is_success() {
+            return Ok(ReponseBody::NotImplemented { command, body });
         }
+        Ok(ReponseBody::Error(error::ErrorResponse { status, command }))
     }
 }

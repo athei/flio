@@ -6,6 +6,7 @@ use std::ops::Deref;
 
 use crate::command::Command;
 use crate::Dialect;
+use crate::ntstatus::NTStatus;
 
 pub const HEADER_LEN: usize = 64;
 pub const SIG_SIZE: usize = 16;
@@ -56,7 +57,7 @@ where
         credit_charge: Option<u16>,
         credit_req_resp: u16,
         channel_sequence: Option<u16>,
-        status: Option<u32>,
+        status: Option<NTStatus>,
         flags: Flags,
         message_id: u64,
         sync_type: SyncType,
@@ -64,7 +65,7 @@ where
         signature: Signature,
     ) -> Self;
 
-    fn get_status(&self) -> Option<u32>;
+    fn get_status(&self) -> Option<NTStatus>;
 
     #[allow(clippy::cyclomatic_complexity)]
     #[rustfmt::skip]
@@ -95,7 +96,7 @@ where
                         credit_charge,
                         credit_req_grant,
                         derive_channel_sequence(status, dialect, Self::IS_RESPONSE),
-                        derive_status(status, dialect, Self::IS_RESPONSE),
+                        derive_status(status, Self::IS_RESPONSE),
                         flags,
                         message_id,
                         {
@@ -132,7 +133,7 @@ pub struct RequestHeader {
 pub struct ResponseHeader {
     pub credit_charge: Option<u16>,
     pub credit_response: u16,
-    pub status: u32,
+    pub status: NTStatus,
     pub flags: Flags,
     pub message_id: u64,
     pub sync_type: SyncType,
@@ -156,7 +157,7 @@ impl Header for RequestHeader {
         credit_charge: Option<u16>,
         credit_req_resp: u16,
         channel_sequence: Option<u16>,
-        _status: Option<u32>,
+        _status: Option<NTStatus>,
         flags: Flags,
         message_id: u64,
         sync_type: SyncType,
@@ -175,7 +176,7 @@ impl Header for RequestHeader {
         }
     }
 
-    fn get_status(&self) -> Option<u32> {
+    fn get_status(&self) -> Option<NTStatus> {
         None
     }
 }
@@ -187,7 +188,7 @@ impl Header for ResponseHeader {
         credit_charge: Option<u16>,
         credit_req_resp: u16,
         _channel_sequence: Option<u16>,
-        status: Option<u32>,
+        status: Option<NTStatus>,
         flags: Flags,
         message_id: u64,
         sync_type: SyncType,
@@ -197,7 +198,7 @@ impl Header for ResponseHeader {
         ResponseHeader {
             credit_charge,
             credit_response: credit_req_resp,
-            status: status.unwrap(),
+            status: status.unwrap_or(NTStatus::UNKNOWN_ERROR),
             flags,
             message_id,
             sync_type,
@@ -206,7 +207,7 @@ impl Header for ResponseHeader {
         }
     }
 
-    fn get_status(&self) -> Option<u32> {
+    fn get_status(&self) -> Option<NTStatus> {
         Some(self.status)
     }
 }
@@ -243,11 +244,9 @@ fn derive_channel_sequence(input: &[u8], dialect: Dialect, is_response: bool) ->
     }
 }
 
-fn derive_status(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u32> {
-    match dialect {
-        Dialect::Smb2_0_2 | Dialect::Smb2_1_0 | _ if is_response => {
-            Some(LittleEndian::read_u32(input))
-        }
-        _ => None,
+fn derive_status(input: &[u8], is_response: bool) -> Option<NTStatus> {
+    if is_response {
+        return FromPrimitive::from_u32(LittleEndian::read_u32(input));
     }
+    None
 }
