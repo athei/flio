@@ -1,5 +1,4 @@
 use bitflags::bitflags;
-use byteorder::{ByteOrder, LittleEndian};
 use nom::*;
 use num_traits::FromPrimitive;
 use std::ops::Deref;
@@ -75,11 +74,13 @@ where
             tag!(b"\xfeSMB") >>
             verify!(le_u16, |v| v == HEADER_LEN as u16) >>
             credit_charge: cond!(dialect > Dialect::Smb2_0_2, le_u16) >>
-            status: take!(4) >>
+            status_bytes: take!(4) >>
             command: map_opt!(le_u16, FromPrimitive::from_u16) >>
             credit_req_grant: le_u16 >>
             flags: map_opt!(le_u32, Flags::from_bits) >>
             verify!(value!(flags.contains(Flags::SERVER_TO_REDIR)), |val| val == Self::IS_RESPONSE) >>
+            status: cond!(Self::IS_RESPONSE, map_opt!(value!(val_le_u32(status_bytes)), FromPrimitive::from_u32)) >>
+            channel_sequence: cond!(has_channel_sequence(dialect, Self::IS_RESPONSE), value!(val_le_u16(status_bytes))) >>
             next_command: le_u32 >>
             message_id: le_u64 >>
             cond!(!flags.contains(Flags::ASYNC_COMMAND), take!(4)) >>
@@ -95,8 +96,8 @@ where
                 ParseResult::<Self>::new( Self::new (
                         credit_charge,
                         credit_req_grant,
-                        derive_channel_sequence(status, dialect, Self::IS_RESPONSE),
-                        derive_status(status, Self::IS_RESPONSE),
+                        channel_sequence,
+                        status,
                         flags,
                         message_id,
                         {
@@ -198,7 +199,7 @@ impl Header for ResponseHeader {
         ResponseHeader {
             credit_charge,
             credit_response: credit_req_resp,
-            status: status.unwrap_or(NTStatus::UNKNOWN_ERROR),
+            status: status.unwrap(),
             flags,
             message_id,
             sync_type,
@@ -231,22 +232,21 @@ fn copy_sig(input: &[u8]) -> Signature {
     Signature(ret)
 }
 
-fn derive_channel_sequence(input: &[u8], dialect: Dialect, is_response: bool) -> Option<u16> {
+fn has_channel_sequence(dialect: Dialect, is_response: bool) -> bool {
     if is_response {
-        return None;
+        return false;
     }
 
     match dialect {
-        Dialect::Smb3_0_0 | Dialect::Smb3_0_2 | Dialect::Smb3_1_1 => {
-            Some(LittleEndian::read_u16(input))
-        }
-        _ => None,
+        Dialect::Smb3_0_0 | Dialect::Smb3_0_2 | Dialect::Smb3_1_1 => true,
+        _ => false,
     }
 }
 
-fn derive_status(input: &[u8], is_response: bool) -> Option<NTStatus> {
-    if is_response {
-        return FromPrimitive::from_u32(LittleEndian::read_u32(input));
-    }
-    None
+fn val_le_u16(data: &[u8]) -> u16 {
+    le_u16(data).unwrap().1
+}
+
+fn val_le_u32(data: &[u8]) -> u32 {
+    le_u32(data).unwrap().1
 }

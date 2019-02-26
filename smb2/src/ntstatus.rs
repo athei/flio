@@ -17,7 +17,6 @@ impl From<NTStatus> for bool {
 #[allow(non_camel_case_types)]
 #[derive(Debug, FromPrimitive, Clone, Copy)]
 pub enum NTStatus {
-    UNKNOWN_ERROR = 0xEFFF_FFFF,
     STATUS_SUCCESS = 0x0000_0000,
     STATUS_WAIT_1 = 0x0000_0001,
     STATUS_WAIT_2 = 0x0000_0002,
