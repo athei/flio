@@ -13,9 +13,12 @@ mod transport;
 use nom::*;
 
 use crate::command::{Body, ReponseBody, RequestBody};
-use crate::header::{Header, RequestHeader, ResponseHeader};
+use crate::header::Request as RequestHeader;
+use crate::header::Response as ResponseHeader;
+use crate::header::Header;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[allow(clippy::pub_enum_variant_names)]
 pub enum Dialect {
     Smb2_0_2 = 0x0202,
     Smb2_1_0 = 0x0210,

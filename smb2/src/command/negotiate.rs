@@ -20,7 +20,7 @@ bitflags! {
 }
 
 #[derive(Debug)]
-pub struct NegotiateRequest {}
+pub struct Request {}
 
 #[derive(Debug)]
-pub struct NegotiateResponse {}
+pub struct Response {}

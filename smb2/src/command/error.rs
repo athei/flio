@@ -3,7 +3,7 @@ use super::Command;
 use crate::ntstatus::NTStatus;
 
 #[derive(Debug)]
-pub struct ErrorResponse {
+pub struct Response {
     // This is the status from the header
     pub status: NTStatus,
     // This is the failed command

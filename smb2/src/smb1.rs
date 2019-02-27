@@ -37,8 +37,8 @@ bitflags! {
 pub struct Signature([u8; SIG_SIZE]);
 
 impl Signature {
-    pub fn empty() -> Signature {
-        Signature([0; SIG_SIZE])
+    pub fn empty() -> Self {
+        Self([0; SIG_SIZE])
     }
 }
 
@@ -58,7 +58,7 @@ pub enum DialectLevel {
 }
 
 impl<'a> From<&'a [u8]> for DialectLevel {
-    fn from(bytes: &'a [u8]) -> DialectLevel {
+    fn from(bytes: &'a [u8]) -> Self {
         match bytes {
             b"SMB 2.002" => DialectLevel::Smb2,
             b"SMB 2.???" => DialectLevel::Smb2Plus,
