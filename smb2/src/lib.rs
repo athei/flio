@@ -6,16 +6,16 @@
 
 pub mod command;
 pub mod header;
-pub mod smb1;
 pub mod ntstatus;
+pub mod smb1;
 mod transport;
 
 use nom::*;
 
 use crate::command::{Body, ReponseBody, RequestBody};
+use crate::header::Header;
 use crate::header::Request as RequestHeader;
 use crate::header::Response as ResponseHeader;
-use crate::header::Header;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 #[allow(clippy::pub_enum_variant_names)]

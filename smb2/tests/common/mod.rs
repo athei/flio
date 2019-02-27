@@ -99,24 +99,17 @@ pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<Vec<Combine
     let mut ptr = buffer.as_slice();
 
     while !ptr.is_empty() {
-        match smb2::parse_request(ptr, smb2::Dialect::Smb3_0_2) {
-            Ok((remaining, messages)) => {
-                ptr = &ptr[ptr.len() - remaining.len()..];
-                for msg in messages {
-                    requests.push(CombinedRequest::V2(msg));
-                }
+        if let Ok((remaining, messages)) = smb2::parse_request(ptr, smb2::Dialect::Smb3_0_2) {
+            ptr = &ptr[ptr.len() - remaining.len()..];
+            for msg in messages {
+                requests.push(CombinedRequest::V2(msg));
             }
-            _ => match smb2::parse_smb1_nego_request(&ptr) {
-                Ok((remaining, msg)) => {
-                    ptr = &ptr[ptr.len() - remaining.len()..];
-                    requests.push(CombinedRequest::V1(msg));
-                }
-                _ => {
-                    return Err(());
-                }
-            },
-        };
+        } else if let Ok((remaining, msg)) = smb2::parse_smb1_nego_request(&ptr) {
+            ptr = &ptr[ptr.len() - remaining.len()..];
+            requests.push(CombinedRequest::V1(msg));
+        } else {
+            return Err(());
+        }
     }
-
     Ok(requests)
 }

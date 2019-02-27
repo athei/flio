@@ -7,3 +7,4 @@
 - fail parse when unknown status instead as of using an unknown error type
 
 - remove derive debug
+- rename smb2 -> smb2-packet

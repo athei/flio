@@ -3,7 +3,7 @@ use num_derive::FromPrimitive;
 impl NTStatus {
     pub fn is_success(self) -> bool {
         // success is indicated by the 2 msb bits
-        ((self as u32) & (0b11 << 30)) == 0 
+        ((self as u32) & (0b11 << 30)) == 0
     }
 }
 

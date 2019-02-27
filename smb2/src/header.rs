@@ -4,8 +4,8 @@ use num_traits::FromPrimitive;
 use std::ops::Deref;
 
 use crate::command::Command;
-use crate::Dialect;
 use crate::ntstatus::NTStatus;
+use crate::Dialect;
 
 pub const HEADER_LEN: u16 = 64;
 pub const SIG_SIZE: usize = 16;
