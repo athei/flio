@@ -1,5 +1,5 @@
 [package]
-name = "smb2"
+name = "smb2-packet"
 version = "0.1.0"
 authors = ["Alexander Theißen <alex@theissen.io>"]
 edition = "2018"

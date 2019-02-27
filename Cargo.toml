@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "smb2",
+    "smb2-packet",
 ]
 
 [profile.release]
