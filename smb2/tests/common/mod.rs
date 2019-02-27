@@ -37,7 +37,7 @@ enum IPPacket<'a> {
 }
 
 lazy_static! {
-    static ref test_dir: PathBuf = {
+    static ref TEST_DIR: PathBuf = {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("tests/data/");
         path
@@ -54,7 +54,7 @@ fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
 pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<Vec<CombinedRequest<'a>>, ()> {
     use std::fs::File;
 
-    let mut path: PathBuf = test_dir.clone();
+    let mut path: PathBuf = TEST_DIR.clone();
     path.push(name);
     path.set_extension("pcapng");
 
