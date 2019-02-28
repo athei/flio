@@ -5,7 +5,7 @@
 mod common;
 
 use crate::common::parse_pcap;
-use smb2::smb1::{DialectLevel, Flags, Flags2, Signature};
+use smb2_packet::smb1::{DialectLevel, Flags, Flags2, Signature};
 
 #[test]
 fn smb1_negot_req_smb2plus() {
