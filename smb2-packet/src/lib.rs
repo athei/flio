@@ -1,6 +1,5 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![warn(clippy::cargo)]
 #![deny(clippy::correctness)]
 #![allow(clippy::useless_attribute)]
 
