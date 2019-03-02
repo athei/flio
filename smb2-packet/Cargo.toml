@@ -11,12 +11,12 @@ categories = ["network-programming"]
 readme = "README.md"
 
 [dependencies]
-nom = "4.1.0"
-bitflags = "1.0.4"
+nom = "4"
+bitflags = "1"
 num-traits = "0.2"
 num-derive = "0.2"
 
 [dev-dependencies]
-pcarp = "1.0.0"
-pnet_packet = "0.21.0"
-lazy_static = "1.2.0"
+pcarp = "1"
+pnet_packet = "0.21"
+lazy_static = "1"
