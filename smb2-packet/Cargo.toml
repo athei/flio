@@ -18,5 +18,5 @@ num-derive = "0.2"
 
 [dev-dependencies]
 pcarp = "1"
-pnet_packet = "0.21"
+pnet_packet = "0.22"
 lazy_static = "1"
