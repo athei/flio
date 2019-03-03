@@ -1,3 +1,7 @@
 - add function to nt status to get severity
     - is_success
     - component part
+
+- add ord and eq everywhere
+
+- tests for nt status impl
