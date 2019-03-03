@@ -1,5 +1,7 @@
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
+#[cfg(test)]
+use strum_macros::EnumIter;
 
 impl NTStatus {
     pub fn is_success(self) -> bool {
@@ -66,6 +68,7 @@ pub enum Facility {
 #[repr(u32)]
 #[derive(FromPrimitive, Clone, Copy)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(EnumIter))]
 pub enum NTStatus {
     StatusSuccess = 0x0000_0000,
     StatusWait1 = 0x0000_0001,
@@ -1859,4 +1862,41 @@ pub enum NTStatus {
     StatusVhdChildParentSizeMismatch = 0xC03A_0017,
     StatusVhdDifferencingChainCycleDetected = 0xC03A_0018,
     StatusVhdDifferencingChainErrorInParent = 0xC03A_0019,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use strum::IntoEnumIterator;
+
+    impl NTStatus {
+        fn is_custom(self) -> bool {
+            (((self as u32) >> 28) & 0x1) == 1
+        }
+
+        fn reserved_field(self) -> u32 {
+            ((self as u32) >> 29) & 0x1
+        }
+    }
+
+    #[test]
+    fn no_custom() {
+        for status in NTStatus::iter() {
+            assert!(!status.is_custom());
+        }
+    }
+
+    #[test]
+    fn all_reserved() {
+        for status in NTStatus::iter() {
+            assert!(status.reserved_field() == 0);
+        }
+    }
+
+    #[test]
+    fn all_severity_exit() {
+        for status in NTStatus::iter() {
+            status.facility();
+        }
+    }
 }
