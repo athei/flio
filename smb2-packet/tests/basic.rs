@@ -5,7 +5,7 @@
 mod common;
 
 use smb2_packet::command::{Command, RequestBody};
-use smb2_packet::header::{ SyncType, Flags, Signature };
+use smb2_packet::header::{Flags, Signature, SyncType};
 
 use crate::common::parse_pcap;
 

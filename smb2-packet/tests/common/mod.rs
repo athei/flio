@@ -6,7 +6,7 @@ use pnet_packet::ipv6::Ipv6Packet;
 use pnet_packet::tcp::TcpPacket;
 use pnet_packet::Packet;
 use smb2_packet::smb1::Request as V1Request;
-use smb2_packet::{ Request, Dialect, parse_request, parse_smb1_nego_request };
+use smb2_packet::{parse_request, parse_smb1_nego_request, Dialect, Request};
 use std::path::PathBuf;
 
 pub enum CombinedRequest<'a> {

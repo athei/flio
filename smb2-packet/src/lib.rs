@@ -74,7 +74,7 @@ where
     fn new(header: Self::Header, body: Self::Body) -> Self;
 
     fn parse(input: &'a [u8], dialect: Dialect) -> Result<Vec<Self>, nom::Err<&[u8]>> {
-        use nom::{ complete, apply };
+        use nom::{apply, complete};
         let mut result = Vec::new();
         let mut cur = input;
         loop {
