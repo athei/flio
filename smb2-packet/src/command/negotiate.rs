@@ -1,6 +1,7 @@
 use bitflags::bitflags;
 use num_derive::FromPrimitive;
 
+#[repr(u16)]
 #[derive(FromPrimitive)]
 enum SecurityMode {
     SigningEnabled = 0x01,

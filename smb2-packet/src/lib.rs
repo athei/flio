@@ -14,6 +14,7 @@ use crate::header::Header;
 use crate::header::Request as RequestHeader;
 use crate::header::Response as ResponseHeader;
 
+#[repr(u16)]
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 #[allow(clippy::pub_enum_variant_names)]
 pub enum Dialect {
