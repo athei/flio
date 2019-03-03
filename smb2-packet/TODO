@@ -1,4 +1,3 @@
-- convert ntstatus to camelCase
 - add function to nt status to get severity
     - is_success
     - component part
