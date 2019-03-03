@@ -5,7 +5,8 @@ use num_derive::FromPrimitive;
 
 use crate::ntstatus::NTStatus;
 
-#[derive(Debug, FromPrimitive, PartialEq)]
+#[derive(FromPrimitive, PartialEq)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Command {
     Negotiate = 0x00,
     SessionSetup = 0x01,
@@ -28,13 +29,13 @@ pub enum Command {
     OplockBreak = 0x12,
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum RequestBody<'a> {
     Negotiate(negotiate::Request),
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum ReponseBody<'a> {
     Negotiate(negotiate::Response),
     Error(error::Response),

@@ -26,13 +26,13 @@ pub enum Dialect {
     Smb3_1_1 = 0x0311,
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Request<'a> {
     pub header: RequestHeader,
     pub body: RequestBody<'a>,
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Response<'a> {
     pub header: ResponseHeader,
     pub body: ReponseBody<'a>,

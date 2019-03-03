@@ -33,7 +33,8 @@ bitflags! {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Signature([u8; SIG_SIZE]);
 
 impl Signature {
@@ -67,7 +68,7 @@ impl<'a> From<&'a [u8]> for DialectLevel {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Header {
     pub status: u32,
     pub flags: Flags,
@@ -79,12 +80,12 @@ pub struct Header {
     pub signature: Signature,
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct NegotiateRequest {
     pub level: DialectLevel,
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Request {
     pub header: Header,
     pub negotiate: NegotiateRequest,

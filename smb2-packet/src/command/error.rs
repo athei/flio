@@ -2,7 +2,7 @@ use super::Command;
 
 use crate::ntstatus::NTStatus;
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Response {
     // This is the status from the header
     pub status: NTStatus,

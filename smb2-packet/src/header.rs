@@ -22,13 +22,15 @@ bitflags! {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum SyncType {
     Async { async_id: u64 },
     Sync { tree_id: u32 },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Signature([u8; SIG_SIZE]);
 
 impl Signature {
@@ -118,7 +120,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Request {
     pub credit_charge: Option<u16>,
     pub credit_request: u16,
@@ -130,7 +132,7 @@ pub struct Request {
     pub signature: Signature,
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Response {
     pub credit_charge: Option<u16>,
     pub credit_response: u16,
