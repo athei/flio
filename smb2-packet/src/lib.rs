@@ -9,8 +9,6 @@ pub mod ntstatus;
 pub mod smb1;
 mod transport;
 
-use nom::*;
-
 use crate::command::{Body, ReponseBody, RequestBody};
 use crate::header::Header;
 use crate::header::Request as RequestHeader;
@@ -38,7 +36,7 @@ pub struct Response<'a> {
     pub body: ReponseBody<'a>,
 }
 
-pub fn parse_request(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Request>> {
+pub fn parse_request(input: &[u8], dialect: Dialect) -> nom::IResult<&[u8], Vec<Request>> {
     match transport::get_payload(input) {
         Ok((rem, out)) => Request::parse(out, dialect).map(|i| (rem, i)),
         Err(x) => Err(x),
@@ -46,6 +44,7 @@ pub fn parse_request(input: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Reque
 }
 
 pub fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, nom::Err<&[u8]>> {
+    use nom::complete;
     match complete!(input, smb1::parse_negotiate) {
         Ok((rem, out)) => {
             assert!(
@@ -58,7 +57,7 @@ pub fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, n
     }
 }
 
-pub fn parse_smb1_nego_request(input: &[u8]) -> IResult<&[u8], smb1::Request> {
+pub fn parse_smb1_nego_request(input: &[u8]) -> nom::IResult<&[u8], smb1::Request> {
     match transport::get_payload(input) {
         Ok((rem, out)) => parse_smb1_nego_request_complete(out).map(|i| (rem, i)),
         Err(x) => Err(x),
@@ -75,6 +74,7 @@ where
     fn new(header: Self::Header, body: Self::Body) -> Self;
 
     fn parse(input: &'a [u8], dialect: Dialect) -> Result<Vec<Self>, nom::Err<&[u8]>> {
+        use nom::{ complete, apply };
         let mut result = Vec::new();
         let mut cur = input;
         loop {
