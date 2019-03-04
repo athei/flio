@@ -2,19 +2,20 @@
 #![warn(clippy::pedantic)]
 #![deny(clippy::correctness)]
 
+#[allow(dead_code)]
 mod common;
 
 use smb2_packet::command::{Command, RequestBody};
 use smb2_packet::header::{Flags, Signature, SyncType};
 
-use crate::common::parse_pcap;
+use crate::common::parse_pcap_requests;
 
 #[test]
 fn all_requests_just_parse() {
     let mut buffer = Vec::new();
-    let requests = parse_pcap("all_Requests", &mut buffer).unwrap();
+    let requests = parse_pcap_requests("all_Requests", &mut buffer).unwrap();
     let len = requests.len();
-    let len_should = 791;
+    let len_should = 789;
     assert!(
         len == len_should,
         "Length should be {} but is {}",
@@ -26,8 +27,7 @@ fn all_requests_just_parse() {
 #[test]
 fn header1() {
     let mut buffer = Vec::new();
-    let request = &parse_pcap("header1", &mut buffer).unwrap()[0];
-    let request = request.unwrap_v2();
+    let request = &parse_pcap_requests("header1", &mut buffer).unwrap()[0];
     let header = &request.header;
 
     assert_eq!(header.credit_charge, Some(0));

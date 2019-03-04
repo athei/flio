@@ -34,7 +34,7 @@ fn request(data: &[u8]) -> IResult<&[u8], Vec<Request>> {
     parse::<Request>(data, Dialect::Smb3_0_2)
 }
 
-pub fn smb1nego_request(data: &[u8]) -> IResult<&[u8], Vec<V1Request>> {
+fn request_smb1_nego(data: &[u8]) -> IResult<&[u8], Vec<V1Request>> {
     parse_smb1_nego_request(data).map(|(remaining, msg)| (remaining, vec![msg]))
 }
 
@@ -43,6 +43,13 @@ pub fn parse_pcap_requests<'a>(
     buffer: &'a mut Vec<u8>,
 ) -> Result<Vec<Request<'a>>, ()> {
     parse_pcap(name, buffer, request)
+}
+
+pub fn parse_pcap_smb1nego(
+    name: &str,
+    buffer: & mut Vec<u8>,
+) -> Result<Vec<V1Request>, ()> {
+    parse_pcap(name, buffer, request_smb1_nego)
 }
 
 fn parse_pcap<'a, F, T>(name: &str, buffer: &'a mut Vec<u8>, func: F) -> Result<Vec<T>, ()>
@@ -97,7 +104,7 @@ where
 
     while !ptr.is_empty() {
         match func(ptr) {
-            Ok((remaining, messages)) => {
+            Ok((remaining, mut messages)) => {
                 ptr = &ptr[ptr.len() - remaining.len()..];
                 requests.append(&mut messages);
             }
