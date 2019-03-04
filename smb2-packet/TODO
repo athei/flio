@@ -5,3 +5,5 @@
 - add ord and eq everywhere
 
 - tests for nt status impl
+
+- v1request entfernen. es gibt nur nego

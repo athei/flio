@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use nom::IResult;
 use pcarp::Capture;
 use pnet_packet::ethernet::{EtherTypes, EthernetPacket};
 use pnet_packet::ipv4::Ipv4Packet;
@@ -8,28 +9,6 @@ use pnet_packet::Packet;
 use smb2_packet::smb1::Request as V1Request;
 use smb2_packet::{parse, parse_smb1_nego_request, Dialect, Request};
 use std::path::PathBuf;
-
-pub enum CombinedRequest<'a> {
-    V1(V1Request),
-    V2(Request<'a>),
-}
-
-#[allow(dead_code)]
-impl<'a> CombinedRequest<'a> {
-    pub fn unwrap_v1(&self) -> &V1Request {
-        match self {
-            CombinedRequest::V1(x) => x,
-            _ => panic!("Request is not V1"),
-        }
-    }
-
-    pub fn unwrap_v2(&self) -> &Request<'a> {
-        match self {
-            CombinedRequest::V2(x) => x,
-            _ => panic!("Request is not V2"),
-        }
-    }
-}
 
 enum IPPacket<'a> {
     V4(Ipv4Packet<'a>),
@@ -51,7 +30,25 @@ fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
     }
 }
 
-pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<Vec<CombinedRequest<'a>>, ()> {
+fn request(data: &[u8]) -> IResult<&[u8], Vec<Request>> {
+    parse::<Request>(data, Dialect::Smb3_0_2)
+}
+
+pub fn smb1nego_request(data: &[u8]) -> IResult<&[u8], Vec<V1Request>> {
+    parse_smb1_nego_request(data).map(|(remaining, msg)| (remaining, vec![msg]))
+}
+
+pub fn parse_pcap_requests<'a>(
+    name: &str,
+    buffer: &'a mut Vec<u8>,
+) -> Result<Vec<Request<'a>>, ()> {
+    parse_pcap(name, buffer, request)
+}
+
+fn parse_pcap<'a, F, T>(name: &str, buffer: &'a mut Vec<u8>, func: F) -> Result<Vec<T>, ()>
+where
+    F: Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>>,
+{
     use std::fs::File;
 
     let mut path: PathBuf = TEST_DIR.clone();
@@ -99,16 +96,14 @@ pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<Vec<Combine
     let mut ptr = buffer.as_slice();
 
     while !ptr.is_empty() {
-        if let Ok((remaining, messages)) = parse::<Request>(ptr, Dialect::Smb3_0_2) {
-            ptr = &ptr[ptr.len() - remaining.len()..];
-            for msg in messages {
-                requests.push(CombinedRequest::V2(msg));
+        match func(ptr) {
+            Ok((remaining, messages)) => {
+                ptr = &ptr[ptr.len() - remaining.len()..];
+                requests.append(&mut messages);
             }
-        } else if let Ok((remaining, msg)) = parse_smb1_nego_request(&ptr) {
-            ptr = &ptr[ptr.len() - remaining.len()..];
-            requests.push(CombinedRequest::V1(msg));
-        } else {
-            return Err(());
+            Err(err) => {
+                println!("Error parsing message: {:#?}", err);
+            }
         }
     }
     Ok(requests)

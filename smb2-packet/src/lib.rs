@@ -38,7 +38,8 @@ pub struct Response<'a> {
 }
 
 pub fn parse<'a, T>(input: &'a [u8], dialect: Dialect) -> nom::IResult<&'a [u8], Vec<T>>
-    where T: Packet<'a>
+where
+    T: Packet<'a>,
 {
     match transport::get_payload(input) {
         Ok((rem, out)) => T::parse(out, dialect).map(|i| (rem, i)),
