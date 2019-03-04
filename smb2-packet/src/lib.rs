@@ -37,14 +37,23 @@ pub struct Response<'a> {
     pub body: ReponseBody<'a>,
 }
 
-pub fn parse_request(input: &[u8], dialect: Dialect) -> nom::IResult<&[u8], Vec<Request>> {
+pub fn parse<'a, T>(input: &'a [u8], dialect: Dialect) -> nom::IResult<&'a [u8], Vec<T>>
+    where T: Packet<'a>
+{
     match transport::get_payload(input) {
-        Ok((rem, out)) => Request::parse(out, dialect).map(|i| (rem, i)),
+        Ok((rem, out)) => T::parse(out, dialect).map(|i| (rem, i)),
         Err(x) => Err(x),
     }
 }
 
-pub fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, nom::Err<&[u8]>> {
+pub fn parse_smb1_nego_request(input: &[u8]) -> nom::IResult<&[u8], smb1::Request> {
+    match transport::get_payload(input) {
+        Ok((rem, out)) => parse_smb1_nego_request_complete(out).map(|i| (rem, i)),
+        Err(x) => Err(x),
+    }
+}
+
+fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, nom::Err<&[u8]>> {
     use nom::complete;
     match complete!(input, smb1::parse_negotiate) {
         Ok((rem, out)) => {
@@ -58,14 +67,7 @@ pub fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, n
     }
 }
 
-pub fn parse_smb1_nego_request(input: &[u8]) -> nom::IResult<&[u8], smb1::Request> {
-    match transport::get_payload(input) {
-        Ok((rem, out)) => parse_smb1_nego_request_complete(out).map(|i| (rem, i)),
-        Err(x) => Err(x),
-    }
-}
-
-trait Packet<'a>
+pub trait Packet<'a>
 where
     Self: Sized,
 {

@@ -6,7 +6,7 @@ use pnet_packet::ipv6::Ipv6Packet;
 use pnet_packet::tcp::TcpPacket;
 use pnet_packet::Packet;
 use smb2_packet::smb1::Request as V1Request;
-use smb2_packet::{parse_request, parse_smb1_nego_request, Dialect, Request};
+use smb2_packet::{parse, parse_smb1_nego_request, Dialect, Request};
 use std::path::PathBuf;
 
 pub enum CombinedRequest<'a> {
@@ -99,7 +99,7 @@ pub fn parse_pcap<'a>(name: &str, buffer: &'a mut Vec<u8>) -> Result<Vec<Combine
     let mut ptr = buffer.as_slice();
 
     while !ptr.is_empty() {
-        if let Ok((remaining, messages)) = parse_request(ptr, Dialect::Smb3_0_2) {
+        if let Ok((remaining, messages)) = parse::<Request>(ptr, Dialect::Smb3_0_2) {
             ptr = &ptr[ptr.len() - remaining.len()..];
             for msg in messages {
                 requests.push(CombinedRequest::V2(msg));
