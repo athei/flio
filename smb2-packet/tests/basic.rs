@@ -8,13 +8,27 @@ mod common;
 use smb2_packet::command::{Command, RequestBody};
 use smb2_packet::header::{Flags, Signature, SyncType};
 
-use crate::common::parse_pcap_requests;
+use crate::common::{parse_pcap_requests, parse_pcap_responses};
 
 #[test]
 fn all_requests_just_parse() {
     let mut buffer = Vec::new();
-    let requests = parse_pcap_requests("all_Requests", &mut buffer).unwrap();
+    let requests = parse_pcap_requests("all_requests", &mut buffer).unwrap();
     let len = requests.len();
+    let len_should = 789;
+    assert!(
+        len == len_should,
+        "Length should be {} but is {}",
+        len_should,
+        len
+    );
+}
+
+#[test]
+fn all_responses_just_parse() {
+    let mut buffer = Vec::new();
+    let responses = parse_pcap_responses("all_responses", &mut buffer).unwrap();
+    let len = responses.len();
     let len_should = 789;
     assert!(
         len == len_should,

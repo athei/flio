@@ -7,7 +7,7 @@ use pnet_packet::ipv6::Ipv6Packet;
 use pnet_packet::tcp::TcpPacket;
 use pnet_packet::Packet;
 use smb2_packet::smb1::Request as V1Request;
-use smb2_packet::{parse, parse_smb1_nego_request, Dialect, Request};
+use smb2_packet::{parse, parse_smb1_nego_request, Dialect, Request, Response};
 use std::path::PathBuf;
 
 enum IPPacket<'a> {
@@ -30,12 +30,23 @@ fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
     }
 }
 
+fn response(data: &[u8]) -> IResult<&[u8], Vec<Response>> {
+    parse::<Response>(data, Dialect::Smb3_0_2)
+}
+
 fn request(data: &[u8]) -> IResult<&[u8], Vec<Request>> {
     parse::<Request>(data, Dialect::Smb3_0_2)
 }
 
 fn request_smb1_nego(data: &[u8]) -> IResult<&[u8], Vec<V1Request>> {
     parse_smb1_nego_request(data).map(|(remaining, msg)| (remaining, vec![msg]))
+}
+
+pub fn parse_pcap_responses<'a>(
+    name: &str,
+    buffer: &'a mut Vec<u8>,
+) -> Result<Vec<Response<'a>>, ()> {
+    parse_pcap(name, buffer, response)
 }
 
 pub fn parse_pcap_requests<'a>(
@@ -45,10 +56,7 @@ pub fn parse_pcap_requests<'a>(
     parse_pcap(name, buffer, request)
 }
 
-pub fn parse_pcap_smb1nego(
-    name: &str,
-    buffer: & mut Vec<u8>,
-) -> Result<Vec<V1Request>, ()> {
+pub fn parse_pcap_smb1nego(name: &str, buffer: &mut Vec<u8>) -> Result<Vec<V1Request>, ()> {
     parse_pcap(name, buffer, request_smb1_nego)
 }
 
@@ -101,16 +109,15 @@ where
     }
 
     let mut ptr = buffer.as_slice();
-
+    let mut num: u32 = 1;
     while !ptr.is_empty() {
-        match func(ptr) {
-            Ok((remaining, mut messages)) => {
-                ptr = &ptr[ptr.len() - remaining.len()..];
-                requests.append(&mut messages);
-            }
-            Err(err) => {
-                println!("Error parsing message: {:#?}", err);
-            }
+        if let Ok((remaining, mut messages)) = func(ptr) {
+            ptr = &ptr[ptr.len() - remaining.len()..];
+            requests.append(&mut messages);
+            num += 1;
+        } else {
+            println!("Error parsing message numner {}", num);
+            return Err(());
         }
     }
     Ok(requests)

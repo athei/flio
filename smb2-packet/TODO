@@ -7,3 +7,4 @@
 - tests for nt status impl
 
 - v1request entfernen. es gibt nur nego
+- save sequence number for each packet so we can see which failed
