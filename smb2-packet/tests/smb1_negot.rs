@@ -12,7 +12,7 @@ use smb2_packet::smb1::{DialectLevel, Flags, Flags2, Signature};
 fn smb1_negot_req_smb2plus() {
     let mut buffer = Vec::new();
     let req = &parse_pcap_smb1nego("smb1_negot_req_smb2plus", &mut buffer).unwrap()[0];
-    assert_eq!(req.negotiate.level, DialectLevel::Smb2Plus);
+    assert_eq!(req.level, DialectLevel::Smb2Plus);
 
     // check header
     let header = &req.header;
@@ -43,7 +43,7 @@ fn smb1_negot_req_smb2plus() {
 fn smb1_negot_req_not_supported() {
     let mut buffer = Vec::new();
     let req = &parse_pcap_smb1nego("smb1_negot_req_not_supported", &mut buffer).unwrap()[0];
-    assert_eq!(req.negotiate.level, DialectLevel::NotSupported);
+    assert_eq!(req.level, DialectLevel::NotSupported);
 
     // check header
     let header = &req.header;

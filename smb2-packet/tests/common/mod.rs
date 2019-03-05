@@ -6,7 +6,7 @@ use pnet_packet::ipv4::Ipv4Packet;
 use pnet_packet::ipv6::Ipv6Packet;
 use pnet_packet::tcp::TcpPacket;
 use pnet_packet::Packet;
-use smb2_packet::smb1::Request as V1Request;
+use smb2_packet::smb1::NegotiateRequest as V1NegotRequest;
 use smb2_packet::{parse, parse_smb1_nego_request, Dialect, Request, Response};
 use std::path::PathBuf;
 
@@ -38,7 +38,7 @@ fn request(data: &[u8]) -> IResult<&[u8], Vec<Request>> {
     parse::<Request>(data, Dialect::Smb3_0_2)
 }
 
-fn request_smb1_nego(data: &[u8]) -> IResult<&[u8], Vec<V1Request>> {
+fn request_smb1_nego(data: &[u8]) -> IResult<&[u8], Vec<V1NegotRequest>> {
     parse_smb1_nego_request(data).map(|(remaining, msg)| (remaining, vec![msg]))
 }
 
@@ -56,7 +56,7 @@ pub fn parse_pcap_requests<'a>(
     parse_pcap(name, buffer, request)
 }
 
-pub fn parse_pcap_smb1nego(name: &str, buffer: &mut Vec<u8>) -> Result<Vec<V1Request>, ()> {
+pub fn parse_pcap_smb1nego(name: &str, buffer: &mut Vec<u8>) -> Result<Vec<V1NegotRequest>, ()> {
     parse_pcap(name, buffer, request_smb1_nego)
 }
 

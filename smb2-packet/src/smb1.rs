@@ -82,13 +82,8 @@ pub struct Header {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct NegotiateRequest {
-    pub level: DialectLevel,
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Request {
     pub header: Header,
-    pub negotiate: NegotiateRequest,
+    pub level: DialectLevel,
 }
 
 fn copy_sig(input: &[u8]) -> Signature {
@@ -149,24 +144,18 @@ fn parse_dialects(input: &[u8]) -> IResult<&[u8], DialectLevel> {
     )
 }
 
-#[rustfmt::skip]
-fn parse_negotiate_request(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
-    do_parse!(input,
-        tag!(b"\x00") >> /* word count */
-        level: length_value!(le_u16, parse_dialects) >>
-        (NegotiateRequest {
-            level
-        })
-    )
-}
+named!(
+    parse_body<DialectLevel>,
+    preceded!(tag!(b"\x00"), length_value!(le_u16, parse_dialects))
+);
 
-pub fn parse_negotiate(input: &[u8]) -> IResult<&[u8], Request> {
+pub fn parse_negotiate(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
     match parse_header(input) {
         Ok((rem, (header, body))) => Ok((
             rem,
-            Request {
+            NegotiateRequest {
                 header,
-                negotiate: (parse_negotiate_request(body)?).1,
+                level: (parse_body(body)?).1,
             },
         )),
         Err(x) => Err(x),

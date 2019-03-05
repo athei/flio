@@ -47,14 +47,14 @@ where
     }
 }
 
-pub fn parse_smb1_nego_request(input: &[u8]) -> nom::IResult<&[u8], smb1::Request> {
+pub fn parse_smb1_nego_request(input: &[u8]) -> nom::IResult<&[u8], smb1::NegotiateRequest> {
     match transport::get_payload(input) {
         Ok((rem, out)) => parse_smb1_nego_request_complete(out).map(|i| (rem, i)),
         Err(x) => Err(x),
     }
 }
 
-fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::Request, nom::Err<&[u8]>> {
+fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::NegotiateRequest, nom::Err<&[u8]>> {
     use nom::complete;
     match complete!(input, smb1::parse_negotiate) {
         Ok((rem, out)) => {
