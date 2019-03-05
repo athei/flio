@@ -109,16 +109,22 @@ where
     }
 
     let mut ptr = buffer.as_slice();
-    let mut num: u32 = 1;
+    let mut at_byte: usize = 0;
     while !ptr.is_empty() {
         match func(ptr) {
             Ok((remaining, mut messages)) => {
-                ptr = &ptr[ptr.len() - remaining.len()..];
+                let bytes_read = ptr.len() - remaining.len();
+                ptr = &ptr[bytes_read..];
                 requests.append(&mut messages);
-                num += 1;
+                at_byte += bytes_read;
             }
             Err(err) => {
-                println!("Error parsing message number {}: {:#?}", num, err.into_error_kind());
+                println!(
+                    "Error parsing at byte 0x{:08X} with value 0x{:02X}: {:#?}",
+                    at_byte,
+                    ptr[0],
+                    err.into_error_kind()
+                );
                 return Err(());
             }
         }

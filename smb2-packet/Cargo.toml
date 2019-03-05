@@ -10,11 +10,8 @@ keywords = ["smb", "samba", "ntlm"]
 categories = ["network-programming"]
 readme = "README.md"
 
-[dependencies.nom]
-version = "4"
-features = ["verbose-errors"]
-
 [dependencies]
+nom = "4"
 bitflags = "1"
 num-traits = "0.2"
 num-derive = "0.2"
