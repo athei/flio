@@ -111,13 +111,16 @@ where
     let mut ptr = buffer.as_slice();
     let mut num: u32 = 1;
     while !ptr.is_empty() {
-        if let Ok((remaining, mut messages)) = func(ptr) {
-            ptr = &ptr[ptr.len() - remaining.len()..];
-            requests.append(&mut messages);
-            num += 1;
-        } else {
-            println!("Error parsing message numner {}", num);
-            return Err(());
+        match func(ptr) {
+            Ok((remaining, mut messages)) => {
+                ptr = &ptr[ptr.len() - remaining.len()..];
+                requests.append(&mut messages);
+                num += 1;
+            }
+            Err(err) => {
+                println!("Error parsing message number {}: {:#?}", num, err.into_error_kind());
+                return Err(());
+            }
         }
     }
     Ok(requests)
