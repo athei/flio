@@ -6,7 +6,7 @@ use num_derive::FromPrimitive;
 use crate::ntstatus::NTStatus;
 
 #[repr(u16)]
-#[derive(FromPrimitive, PartialEq)]
+#[derive(FromPrimitive, PartialEq, Eq)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Command {
     Negotiate = 0x00,
