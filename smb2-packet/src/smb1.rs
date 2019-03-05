@@ -96,36 +96,6 @@ fn merge_pid(high: u16, low: u16) -> u32 {
     (u32::from(high) << 16) + u32::from(low)
 }
 
-#[rustfmt::skip]
-fn parse_header(input: &[u8]) -> IResult<&[u8], (Header, &[u8])> {
-    do_parse!(input,
-        tag!(b"\xffSMB") >>
-        tag!(b"\x72") >> /* negotiate command */
-        status: le_u32 >>
-        flags: map_opt!(le_u8, Flags::from_bits) >>
-        verify!(value!(flags.contains(Flags::REPLY)), |is_reply: bool| !is_reply) >>
-        flags2: map_opt!(le_u16, Flags2::from_bits) >>
-        pid_high: le_u16 >>
-        signature: map!(take!(SIG_SIZE), copy_sig) >>
-        take!(2) >>
-        tid: le_u16 >>
-        pid_low: le_u16 >>
-        uid: le_u16 >>
-        mid: le_u16 >>
-        body: rest >>
-        (Header {
-            status,
-            flags,
-            flags2,
-            tid,
-            pid: merge_pid(pid_high, pid_low),
-            uid,
-            mid,
-            signature,
-        }, body)
-    )
-}
-
 fn fold_dialect(accu: DialectLevel, add: &[u8]) -> DialectLevel {
     std::cmp::max(accu, add.into())
 }
@@ -144,20 +114,44 @@ fn parse_dialects(input: &[u8]) -> IResult<&[u8], DialectLevel> {
     )
 }
 
+#[rustfmt::skip]
+fn parse_header(input: &[u8]) -> IResult<&[u8], Header> {
+    do_parse!(input,
+        tag!(b"\xffSMB") >>
+        tag!(b"\x72") >> /* negotiate command */
+        status: le_u32 >>
+        flags: map_opt!(le_u8, Flags::from_bits) >>
+        verify!(value!(flags.contains(Flags::REPLY)), |is_reply: bool| !is_reply) >>
+        flags2: map_opt!(le_u16, Flags2::from_bits) >>
+        pid_high: le_u16 >>
+        signature: map!(take!(SIG_SIZE), copy_sig) >>
+        take!(2) >>
+        tid: le_u16 >>
+        pid_low: le_u16 >>
+        uid: le_u16 >>
+        mid: le_u16 >>
+        (Header {
+            status,
+            flags,
+            flags2,
+            tid,
+            pid: merge_pid(pid_high, pid_low),
+            uid,
+            mid,
+            signature,
+        })
+    )
+}
+
 named!(
     parse_body<DialectLevel>,
     preceded!(tag!(b"\x00"), length_value!(le_u16, parse_dialects))
 );
 
 pub fn parse_negotiate(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
-    match parse_header(input) {
-        Ok((rem, (header, body))) => Ok((
-            rem,
-            NegotiateRequest {
-                header,
-                level: (parse_body(body)?).1,
-            },
-        )),
-        Err(x) => Err(x),
-    }
+    do_parse!(input,
+        header: parse_header >>
+        level: parse_body >>
+        ( NegotiateRequest { header, level } )
+    )
 }
