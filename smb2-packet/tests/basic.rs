@@ -29,7 +29,7 @@ fn all_responses_just_parse() {
     let mut buffer = Vec::new();
     let responses = parse_pcap_responses("all_responses", &mut buffer).unwrap();
     let len = responses.len();
-    let len_should = 789;
+    let len_should = 232;
     assert!(
         len == len_should,
         "Length should be {} but is {}",
