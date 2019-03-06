@@ -37,7 +37,7 @@ pub enum RequestBody<'a> {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum ReponseBody<'a> {
+pub enum ResponseBody<'a> {
     Negotiate(negotiate::Response),
     Error(error::Response),
     NotImplemented { command: Command, body: &'a [u8] },
@@ -64,7 +64,7 @@ impl<'a> Body<'a> for RequestBody<'a> {
     }
 }
 
-impl<'a> Body<'a> for ReponseBody<'a> {
+impl<'a> Body<'a> for ResponseBody<'a> {
     fn parse(
         body: &'a [u8],
         command: Command,
@@ -72,8 +72,8 @@ impl<'a> Body<'a> for ReponseBody<'a> {
     ) -> Result<Self, nom::Err<&'a [u8]>> {
         let status = status.unwrap();
         if !status.is_success() {
-            return Ok(ReponseBody::NotImplemented { command, body });
+            return Ok(ResponseBody::NotImplemented { command, body });
         }
-        Ok(ReponseBody::Error(error::Response { status, command }))
+        Ok(ResponseBody::Error(error::Response { status, command }))
     }
 }

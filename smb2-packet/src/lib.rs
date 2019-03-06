@@ -9,7 +9,7 @@ pub mod ntstatus;
 pub mod smb1;
 mod transport;
 
-use crate::command::{Body, ReponseBody, RequestBody};
+use crate::command::{Body, RequestBody, ResponseBody};
 use crate::header::Header;
 use crate::header::Request as RequestHeader;
 use crate::header::Response as ResponseHeader;
@@ -34,7 +34,7 @@ pub struct Request<'a> {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Response<'a> {
     pub header: ResponseHeader,
-    pub body: ReponseBody<'a>,
+    pub body: ResponseBody<'a>,
 }
 
 pub fn parse<'a, T>(input: &'a [u8], dialect: Dialect) -> nom::IResult<&'a [u8], Vec<T>>
@@ -54,7 +54,9 @@ pub fn parse_smb1_nego_request(input: &[u8]) -> nom::IResult<&[u8], smb1::Negoti
     }
 }
 
-fn parse_smb1_nego_request_complete(input: &[u8]) -> Result<smb1::NegotiateRequest, nom::Err<&[u8]>> {
+fn parse_smb1_nego_request_complete(
+    input: &[u8],
+) -> Result<smb1::NegotiateRequest, nom::Err<&[u8]>> {
     use nom::complete;
     match complete!(input, smb1::parse_negotiate) {
         Ok((rem, out)) => {
@@ -87,7 +89,10 @@ where
                     let status = output.header.get_status();
                     result.push(Self::new(
                         output.header,
-                        complete!(output.body, apply!(Self::Body::parse, output.command, status))?,
+                        complete!(
+                            output.body,
+                            apply!(Self::Body::parse, output.command, status)
+                        )?,
                     ));
                     if remainder.is_empty() {
                         break;
@@ -112,7 +117,7 @@ impl<'a> Packet<'a> for Request<'a> {
 
 impl<'a> Packet<'a> for Response<'a> {
     type Header = ResponseHeader;
-    type Body = ReponseBody<'a>;
+    type Body = ResponseBody<'a>;
 
     fn new(header: Self::Header, body: Self::Body) -> Self {
         Response { header, body }

@@ -149,9 +149,8 @@ named!(
 );
 
 pub fn parse_negotiate(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
-    do_parse!(input,
-        header: parse_header >>
-        level: parse_body >>
-        ( NegotiateRequest { header, level } )
+    do_parse!(
+        input,
+        header: parse_header >> level: parse_body >> (NegotiateRequest { header, level })
     )
 }
