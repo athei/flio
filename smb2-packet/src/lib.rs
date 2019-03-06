@@ -87,7 +87,7 @@ where
                     let status = output.header.get_status();
                     result.push(Self::new(
                         output.header,
-                        Self::Body::parse(output.command, output.body, status)?,
+                        complete!(output.body, apply!(Self::Body::parse, output.command, status))?,
                     ));
                     if remainder.is_empty() {
                         break;

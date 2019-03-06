@@ -48,16 +48,16 @@ where
     Self: Sized,
 {
     fn parse(
-        command: Command,
         body: &'a [u8],
+        command: Command,
         status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>>;
 }
 
 impl<'a> Body<'a> for RequestBody<'a> {
     fn parse(
-        command: Command,
         body: &'a [u8],
+        command: Command,
         _status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>> {
         Ok(RequestBody::NotImplemented { command, body })
@@ -66,8 +66,8 @@ impl<'a> Body<'a> for RequestBody<'a> {
 
 impl<'a> Body<'a> for ReponseBody<'a> {
     fn parse(
-        command: Command,
         body: &'a [u8],
+        command: Command,
         status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>> {
         let status = status.unwrap();
