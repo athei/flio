@@ -60,7 +60,11 @@ impl<'a> Body<'a> for RequestBody<'a> {
         command: Command,
         _status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>> {
-        Ok(RequestBody::NotImplemented { command, body })
+        let cmd = match command {
+            Command::Negotiate => RequestBody::Negotiate(negotiate::parse(body)?.1),
+            _ => RequestBody::NotImplemented { command, body }
+        };
+        Ok(cmd)
     }
 }
 
