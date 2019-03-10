@@ -1,9 +1,16 @@
+use crate::header::HEADER_LEN;
+use crate::Dialect;
 use bitflags::bitflags;
+use nom::*;
 use num_derive::FromPrimitive;
+use num_traits::FromPrimitive;
+
+const STRUCTURE_SIZE: u16 = 36;
 
 #[repr(u16)]
 #[derive(FromPrimitive)]
-enum SecurityMode {
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum SecurityMode {
     SigningEnabled = 0x01,
     SigningRequired = 0x02,
 }
@@ -21,7 +28,74 @@ bitflags! {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Request {}
+pub enum Context<'a> {
+    PreauthIntegrityCapabilities(&'a [u8]),
+    EncryptionCapabilities(&'a [u8]),
+}
+
+impl<'a> Context<'a> {
+    fn new(ctype: u16, data: &'a [u8]) -> Option<Self> {
+        match ctype {
+            0x01 => Some(Context::PreauthIntegrityCapabilities(data)),
+            0x02 => Some(Context::EncryptionCapabilities(data)),
+            _ => None,
+        }
+    }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct Request<'a> {
+    security_mode: SecurityMode,
+    capabilities: Capabilities,
+    client_guid: &'a [u8],
+    dialects: Vec<crate::Dialect>,
+    negotiate_contexts: Option<Vec<Context<'a>>>,
+}
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Response {}
+
+fn parse_negotiate_context(input: &[u8]) -> IResult<&[u8], Option<Context>> {
+    do_parse!(
+        input,
+        context_type: le_u16 >>
+        data_length: le_u16 >>
+        take!(8) >> /* reserved */
+        data: take!(data_length) >>
+        (Context::new(context_type, data))
+    )
+}
+
+fn parse_negotiate_contexts(input: &[u8], offset: u32, count: u16) -> IResult<&[u8], Vec<Context>> {
+    do_parse!(
+        input,
+        take!(offset - (u32::from(HEADER_LEN) + u32::from(STRUCTURE_SIZE))) >> /* optional padding */
+        context: count!(map_opt!(parse_negotiate_context, |x| x), usize::from(count)) >>
+        (context)
+    )
+}
+
+#[allow(clippy::cyclomatic_complexity)]
+pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
+    do_parse!(
+        data,
+        verify!(le_u16, |x| x == STRUCTURE_SIZE) >>
+        dialect_count: verify!(le_u16, |x| x > 0) >>
+        security_mode: map_opt!(le_u16, FromPrimitive::from_u16) >>
+        take!(2) >> /* reserved */
+        capabilities: map_opt!(le_u32, Capabilities::from_bits) >>
+        client_guid: take!(16) >>
+        negot_context_offset: le_u32 >>
+        negot_context_count: le_u16 >>
+        take!(2) >> /* reserved */
+        dialects: count!(map_opt!(le_u16, FromPrimitive::from_u16), usize::from(dialect_count)) >>
+        negotiate_contexts: cond!(dialects.contains(&Dialect::Smb3_1_1), apply!(parse_negotiate_contexts, negot_context_offset, negot_context_count)) >>
+        (Request {
+            security_mode,
+            capabilities,
+            client_guid,
+            dialects,
+            negotiate_contexts,
+        })
+    )
+}
