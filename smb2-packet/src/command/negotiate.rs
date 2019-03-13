@@ -8,7 +8,7 @@ use num_traits::FromPrimitive;
 const STRUCTURE_SIZE: u16 = 36;
 
 #[repr(u16)]
-#[derive(FromPrimitive)]
+#[derive(FromPrimitive, Eq, PartialEq)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum SecurityMode {
     SigningEnabled = 0x01,
@@ -23,7 +23,7 @@ bitflags! {
         const MULTI_CHANNEL = 0x08;
         const PERSISTENT_HANDLES = 0x10;
         const DIRECTORY_LEASING = 0x20;
-        const GLOBAL_CAP_ENCRYPTION = 0x40;
+        const ENCRYPTION = 0x40;
     }
 }
 
@@ -45,11 +45,11 @@ impl<'a> Context<'a> {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Request<'a> {
-    security_mode: SecurityMode,
-    capabilities: Capabilities,
-    client_guid: &'a [u8],
-    dialects: Vec<crate::Dialect>,
-    negotiate_contexts: Option<Vec<Context<'a>>>,
+    pub security_mode: SecurityMode,
+    pub capabilities: Capabilities,
+    pub client_guid: &'a [u8],
+    pub dialects: Vec<crate::Dialect>,
+    pub negotiate_contexts: Vec<Context<'a>>,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -95,7 +95,7 @@ pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
             capabilities,
             client_guid,
             dialects,
-            negotiate_contexts,
+            negotiate_contexts: negotiate_contexts.unwrap_or_default(),
         })
     )
 }

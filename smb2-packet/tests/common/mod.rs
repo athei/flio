@@ -31,11 +31,11 @@ fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
 }
 
 fn response(data: &[u8]) -> IResult<&[u8], Vec<Response>> {
-    parse::<Response>(data, Dialect::Smb3_0_2)
+    parse::<Response>(data, Dialect::Smb3_1_1)
 }
 
 fn request(data: &[u8]) -> IResult<&[u8], Vec<Request>> {
-    parse::<Request>(data, Dialect::Smb3_0_2)
+    parse::<Request>(data, Dialect::Smb3_1_1)
 }
 
 fn request_smb1_nego(data: &[u8]) -> IResult<&[u8], Vec<V1NegotRequest>> {
