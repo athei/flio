@@ -81,8 +81,8 @@ where
             credit_req_grant: le_u16 >>
             flags: map_opt!(le_u32, Flags::from_bits) >>
             verify!(value!(flags.contains(Flags::SERVER_TO_REDIR)), |val| val == Self::IS_RESPONSE) >>
-            status: cond!(Self::IS_RESPONSE, map_opt!(value!(val_le_u32(status_bytes)), FromPrimitive::from_u32)) >>
-            channel_sequence: cond!(has_channel_sequence(dialect, Self::IS_RESPONSE), value!(val_le_u16(status_bytes))) >>
+            status: cond!(Self::IS_RESPONSE, map_opt!(value!(value(le_u32, status_bytes)), FromPrimitive::from_u32)) >>
+            channel_sequence: cond!(has_channel_sequence(dialect, Self::IS_RESPONSE), value!(value(le_u16, status_bytes))) >>
             next_command: le_u32 >>
             message_id: le_u64 >>
             cond!(!flags.contains(Flags::ASYNC_COMMAND), take!(4)) >>
@@ -245,10 +245,6 @@ fn has_channel_sequence(dialect: Dialect, is_response: bool) -> bool {
     }
 }
 
-fn val_le_u16(data: &[u8]) -> u16 {
-    le_u16(data).unwrap().1
-}
-
-fn val_le_u32(data: &[u8]) -> u32 {
-    le_u32(data).unwrap().1
+fn value<F, O>(f: F, data: &[u8]) -> O where F: Fn(&[u8]) -> IResult<&[u8], O> {
+    f(data).unwrap().1
 }
