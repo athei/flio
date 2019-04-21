@@ -66,10 +66,10 @@ fn parse_negotiate_context(input: &[u8]) -> IResult<&[u8], Option<Context>> {
     )
 }
 
-fn parse_negotiate_contexts(input: &[u8], offset: u32, count: u16) -> IResult<&[u8], Vec<Context>> {
+fn parse_negotiate_contexts(input: &[u8], packet_length: u16, offset: u32, count: u16) -> IResult<&[u8], Vec<Context>> {
     do_parse!(
         input,
-        take!(offset - (u32::from(HEADER_LEN) + u32::from(REQUEST_STRUCTURE_SIZE))) >> /* optional padding */
+        take!(offset - u32::from(packet_length)) >> /* optional padding */
         context: count!(map_opt!(parse_negotiate_context, |x| x), usize::from(count)) >>
         (context)
     )
@@ -89,7 +89,8 @@ pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
         negot_context_count: le_u16 >>
         take!(2) >> /* reserved */
         dialects: count!(map_opt!(le_u16, FromPrimitive::from_u16), usize::from(dialect_count)) >>
-        negotiate_contexts: cond!(dialects.contains(&Dialect::Smb3_1_1), apply!(parse_negotiate_contexts, negot_context_offset, negot_context_count)) >>
+        packet_length: value!(HEADER_LEN + REQUEST_STRUCTURE_SIZE + dialect_count * 2) >> /* length of the packet without contexts */
+        negotiate_contexts: cond!(dialects.contains(&Dialect::Smb3_1_1), apply!(parse_negotiate_contexts, packet_length, negot_context_offset, negot_context_count)) >>
         (Request {
             security_mode,
             capabilities,
