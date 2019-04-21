@@ -5,7 +5,7 @@ use nom::*;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
-const STRUCTURE_SIZE: u16 = 36;
+const REQUEST_STRUCTURE_SIZE: u16 = 36;
 
 #[repr(u16)]
 #[derive(FromPrimitive, Eq, PartialEq)]
@@ -69,7 +69,7 @@ fn parse_negotiate_context(input: &[u8]) -> IResult<&[u8], Option<Context>> {
 fn parse_negotiate_contexts(input: &[u8], offset: u32, count: u16) -> IResult<&[u8], Vec<Context>> {
     do_parse!(
         input,
-        take!(offset - (u32::from(HEADER_LEN) + u32::from(STRUCTURE_SIZE))) >> /* optional padding */
+        take!(offset - (u32::from(HEADER_LEN) + u32::from(REQUEST_STRUCTURE_SIZE))) >> /* optional padding */
         context: count!(map_opt!(parse_negotiate_context, |x| x), usize::from(count)) >>
         (context)
     )
@@ -79,7 +79,7 @@ fn parse_negotiate_contexts(input: &[u8], offset: u32, count: u16) -> IResult<&[
 pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
     do_parse!(
         data,
-        verify!(le_u16, |x| x == STRUCTURE_SIZE) >>
+        verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
         dialect_count: verify!(le_u16, |x| x > 0) >>
         security_mode: map_opt!(le_u16, FromPrimitive::from_u16) >>
         take!(2) >> /* reserved */
