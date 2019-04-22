@@ -31,6 +31,7 @@ bitflags! {
 pub enum Context<'a> {
     PreauthIntegrityCapabilities(&'a [u8]),
     EncryptionCapabilities(&'a [u8]),
+    Unknown(&'a [u8]),
 }
 
 impl<'a> Context<'a> {
@@ -38,7 +39,7 @@ impl<'a> Context<'a> {
         match ctype {
             0x01 => Some(Context::PreauthIntegrityCapabilities(data)),
             0x02 => Some(Context::EncryptionCapabilities(data)),
-            _ => None,
+            _ => Some(Context::Unknown(data)),
         }
     }
 }
@@ -60,7 +61,7 @@ fn parse_negotiate_context(input: &[u8]) -> IResult<&[u8], Option<Context>> {
         input,
         context_type: le_u16 >>
         data_length: le_u16 >>
-        take!(8) >> /* reserved */
+        take!(4) >> /* reserved */
         data: take!(data_length) >>
         (Context::new(context_type, data))
     )
