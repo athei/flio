@@ -1,0 +1,4 @@
+s/cond/cond_with_error
+replace packet_start with a length
+    - modular arithmetic durch pointer arithmetic ersetze
+- remove as casts (use try from and exit when it does not fit)

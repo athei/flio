@@ -4,8 +4,21 @@ use bitflags::bitflags;
 use nom::*;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
+use std::convert::TryFrom;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 36;
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct Request<'a> {
+    pub security_mode: SecurityMode,
+    pub capabilities: Capabilities,
+    pub client_guid: &'a [u8],
+    pub dialects: Vec<crate::Dialect>,
+    pub negotiate_contexts: Vec<Context<'a>>,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct Response {}
 
 #[repr(u16)]
 #[derive(FromPrimitive, Eq, PartialEq)]
@@ -29,56 +42,98 @@ bitflags! {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Context<'a> {
-    PreauthIntegrityCapabilities(&'a [u8]),
-    EncryptionCapabilities(&'a [u8]),
+    PreauthIntegrityCapabilities(PreauthIntegrityCapabilities<'a>),
+    EncryptionCapabilities(Vec<Cipher>),
     Unknown(&'a [u8]),
 }
 
 impl<'a> Context<'a> {
-    fn new(ctype: u16, data: &'a [u8]) -> Option<Self> {
+    fn new(data: &'a [u8], ctype: u16) -> IResult<&[u8], Context> {
         match ctype {
-            0x01 => Some(Context::PreauthIntegrityCapabilities(data)),
-            0x02 => Some(Context::EncryptionCapabilities(data)),
-            _ => Some(Context::Unknown(data)),
+            0x01 => do_parse!(
+                data,
+                algo_count: le_u16
+                    >> salt_length: le_u16
+                    >> hash_algorithms:
+                        count!(
+                            map_opt!(le_u16, FromPrimitive::from_u16),
+                            usize::from(algo_count)
+                        )
+                    >> salt: take!(salt_length)
+                    >> (Context::PreauthIntegrityCapabilities(PreauthIntegrityCapabilities {
+                        hash_algorithms,
+                        salt,
+                    }))
+            ),
+            0x02 => do_parse!(
+                data,
+                cipher_count: le_u16
+                    >> ciphers:
+                        count!(
+                            map_opt!(le_u16, FromPrimitive::from_u16),
+                            usize::from(cipher_count)
+                        )
+                    >> (Context::EncryptionCapabilities(ciphers))
+            ),
+            _ => map!(data, rest, |d| Context::Unknown(d)),
         }
     }
 }
 
+#[repr(u16)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Request<'a> {
-    pub security_mode: SecurityMode,
-    pub capabilities: Capabilities,
-    pub client_guid: &'a [u8],
-    pub dialects: Vec<crate::Dialect>,
-    pub negotiate_contexts: Vec<Context<'a>>,
+#[derive(FromPrimitive)]
+pub enum HashAlgorithm {
+    Sha512 = 0x01,
+}
+
+#[repr(u16)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(FromPrimitive)]
+pub enum Cipher {
+    Aes128Ccm = 0x01,
+    Aes128Gcm = 0x02,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Response {}
+pub struct PreauthIntegrityCapabilities<'a> {
+    hash_algorithms: Vec<HashAlgorithm>,
+    salt: &'a [u8],
+}
 
-fn parse_negotiate_context(input: &[u8]) -> IResult<&[u8], Option<Context>> {
+fn parse_negotiate_context(input: &[u8], packet_len: u32) -> IResult<&[u8], Context> {
+    let padding = (8 - ((packet_len - u32::try_from(input.len()).unwrap()) % 8)) % 8; /* align to 8 byte */
     do_parse!(
         input,
+        take!(padding) >>
         context_type: le_u16 >>
         data_length: le_u16 >>
         take!(4) >> /* reserved */
-        data: take!(data_length) >>
-        (Context::new(context_type, data))
-    )
-}
-
-fn parse_negotiate_contexts(input: &[u8], packet_length: u32, offset: u32, count: u16) -> IResult<&[u8], Vec<Context>> {
-    do_parse!(
-        input,
-        verify!(value!(offset), |x| x >= packet_length) >>
-        take!(offset - packet_length) >> /* optional padding */
-        context: count!(map_opt!(parse_negotiate_context, |x| x), usize::from(count)) >>
+        context: length_value!(value!(data_length), apply!(Context::new, context_type)) >>
         (context)
     )
 }
 
+fn parse_negotiate_contexts(
+    input: &[u8],
+    packet_length: u32,
+    offset: u32,
+    count: u16,
+) -> IResult<&[u8], Vec<Context>> {
+    let current_pos = packet_length - u32::try_from(input.len()).unwrap();
+    let negot = do_parse!(
+        input,
+        verify!(value!(offset), |x| x >= current_pos) >>
+        take!(offset - current_pos) >> /* optional padding */
+        context: count!(apply!(parse_negotiate_context, packet_length), usize::from(count)) >>
+        (context)
+    );
+    negot
+}
+
 #[allow(clippy::cyclomatic_complexity)]
 pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
+    let packet_length = u32::try_from(data.len()).unwrap() + u32::from(HEADER_LEN);
     do_parse!(
         data,
         verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
@@ -91,8 +146,7 @@ pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
         negot_context_count: le_u16 >>
         take!(2) >> /* reserved */
         dialects: count!(map_opt!(le_u16, FromPrimitive::from_u16), usize::from(dialect_count)) >>
-        packet_length: value!(u32::from(HEADER_LEN + REQUEST_STRUCTURE_SIZE) + u32::from(dialect_count) * 2) >> /* length of the packet without contexts */
-        negotiate_contexts: cond!(dialects.contains(&Dialect::Smb3_1_1), apply!(parse_negotiate_contexts, packet_length, negot_context_offset, negot_context_count)) >>
+        negotiate_contexts: cond_with_error!(dialects.contains(&Dialect::Smb3_1_1), apply!(parse_negotiate_contexts, packet_length, negot_context_offset, negot_context_count)) >>
         (Request {
             security_mode,
             capabilities,

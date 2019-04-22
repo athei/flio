@@ -245,6 +245,9 @@ fn has_channel_sequence(dialect: Dialect, is_response: bool) -> bool {
     }
 }
 
-fn value<F, O>(f: F, data: &[u8]) -> O where F: Fn(&[u8]) -> IResult<&[u8], O> {
+fn value<F, O>(f: F, data: &[u8]) -> O
+where
+    F: Fn(&[u8]) -> IResult<&[u8], O>,
+{
     f(data).unwrap().1
 }

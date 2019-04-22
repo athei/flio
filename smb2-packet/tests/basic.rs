@@ -122,3 +122,11 @@ fn negotiate_request() {
     assert_eq!(body.dialects, dialects);
     assert_eq!(body.negotiate_contexts.len(), 0);
 }
+
+#[test]
+fn negotiate_with_context_request() {
+    let mut buffer = Vec::new();
+    let request = &parse_pcap_requests("negotiate_with_context_request", &mut buffer).unwrap()[0];
+
+    println!("{:#x?}", request);
+}

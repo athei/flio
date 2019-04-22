@@ -56,7 +56,10 @@ pub fn parse_pcap_requests<'a>(
     parse_pcap(name, buffer, request)
 }
 
-pub fn parse_pcap_smb1nego(name: &str, buffer: &mut Vec<u8>) -> Result<Vec<V1NegotRequest>, String> {
+pub fn parse_pcap_smb1nego(
+    name: &str,
+    buffer: &mut Vec<u8>,
+) -> Result<Vec<V1NegotRequest>, String> {
     parse_pcap(name, buffer, request_smb1_nego)
 }
 
@@ -121,9 +124,7 @@ where
             Err(err) => {
                 let msg = format!(
                     "Error parsing at byte 0x{:08X} with value 0x{:02X}: {:x?}",
-                    at_byte,
-                    ptr[0],
-                    err,
+                    at_byte, ptr[0], err,
                 );
                 return Err(msg);
             }
