@@ -45,22 +45,22 @@ fn request_smb1_nego(data: &[u8]) -> IResult<&[u8], Vec<V1NegotRequest>> {
 pub fn parse_pcap_responses<'a>(
     name: &str,
     buffer: &'a mut Vec<u8>,
-) -> Result<Vec<Response<'a>>, ()> {
+) -> Result<Vec<Response<'a>>, String> {
     parse_pcap(name, buffer, response)
 }
 
 pub fn parse_pcap_requests<'a>(
     name: &str,
     buffer: &'a mut Vec<u8>,
-) -> Result<Vec<Request<'a>>, ()> {
+) -> Result<Vec<Request<'a>>, String> {
     parse_pcap(name, buffer, request)
 }
 
-pub fn parse_pcap_smb1nego(name: &str, buffer: &mut Vec<u8>) -> Result<Vec<V1NegotRequest>, ()> {
+pub fn parse_pcap_smb1nego(name: &str, buffer: &mut Vec<u8>) -> Result<Vec<V1NegotRequest>, String> {
     parse_pcap(name, buffer, request_smb1_nego)
 }
 
-fn parse_pcap<'a, F, T>(name: &str, buffer: &'a mut Vec<u8>, func: F) -> Result<Vec<T>, ()>
+fn parse_pcap<'a, F, T>(name: &str, buffer: &'a mut Vec<u8>, func: F) -> Result<Vec<T>, String>
 where
     F: Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>>,
 {
@@ -119,13 +119,13 @@ where
                 at_byte += bytes_read;
             }
             Err(err) => {
-                println!(
-                    "Error parsing at byte 0x{:08X} with value 0x{:02X}: {:#?}",
+                let msg = format!(
+                    "Error parsing at byte 0x{:08X} with value 0x{:02X}: {:x?}",
                     at_byte,
                     ptr[0],
-                    err.into_error_kind()
+                    err,
                 );
-                return Err(());
+                return Err(msg);
             }
         }
     }
