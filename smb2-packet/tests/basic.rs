@@ -125,8 +125,39 @@ fn negotiate_request() {
 
 #[test]
 fn negotiate_with_context_request() {
+    use smb2_packet::command::negotiate::*;
+
     let mut buffer = Vec::new();
     let request = &parse_pcap_requests("negotiate_with_context_request", &mut buffer).unwrap()[0];
+    let body;
+    let client_guid = [
+        0xe8, 0xb8, 0x35, 0x76, 0xaa, 0x4f, 0x42, 0x58,
+        0x8c, 0xa2, 0xc7, 0xaa, 0xce, 0xa9, 0xba, 0x80
+    ];
+    let dialects = [
+        Dialect::Smb3_1_1,
+    ];
 
-    println!("{:#x?}", request);
+    match &request.body {
+        RequestBody::Negotiate(msg) => body = msg,
+        _ => panic!("Expected not implemented!"),
+    };
+
+    assert_eq!(body.security_mode, SecurityMode::SigningEnabled);
+    assert_eq!(
+        body.capabilities,
+        Capabilities::DFS
+            | Capabilities::LEASING
+            | Capabilities::LARGE_MTU
+            | Capabilities::PERSISTENT_HANDLES
+            | Capabilities::DIRECTORY_LEASING
+            | Capabilities::ENCRYPTION
+    );
+    assert_eq!(body.client_guid, client_guid);
+    assert_eq!(body.dialects, dialects);
+    assert_eq!(body.negotiate_contexts.len(), 3);
+
+    let preauth_ctx = if let Context::PreauthIntegrityCapabilities(x) = &body.negotiate_contexts[0] { x } else { panic!("first is preauth")};
+    let enc_ctx = if let Context::EncryptionCapabilities(x) = &body.negotiate_contexts[0] { x } else { panic!("second is enc")};
+    let unknown = if let Context::Unknown(x) = body.negotiate_contexts[0] { x } else { panic!("third is unknown")};
 }
