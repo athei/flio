@@ -38,7 +38,7 @@ pub enum RequestBody<'a> {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum ResponseBody<'a> {
-    Negotiate(negotiate::Response),
+    Negotiate(negotiate::Response<'a>),
     Error(error::Response),
     NotImplemented { command: Command, body: &'a [u8] },
 }

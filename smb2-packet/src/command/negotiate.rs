@@ -18,7 +18,18 @@ pub struct Request<'a> {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Response {}
+pub struct Response<'a> {
+    pub security_mode: SecurityMode,
+    pub dialect: Dialect,
+    pub server_guid: &'a [u8],
+    pub capabilities: Capabilities,
+    pub max_transact_size: u32,
+    pub max_read_size: u32,
+    pub system_time: std::time::SystemTime,
+    pub server_start_time: std::time::SystemTime,
+    pub security_buffer: Option<&'a [u8]>,
+    pub negotiate_contexts: Vec<Context<'a>>,
+}
 
 #[repr(u16)]
 #[derive(FromPrimitive, Eq, PartialEq)]
