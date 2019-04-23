@@ -69,42 +69,42 @@ pub enum Context<'a> {
 }
 
 impl<'a> Context<'a> {
+    #[rustfmt::skip]
     fn new(data: &'a [u8], ctype: u16) -> IResult<&[u8], Context> {
         match ctype {
-            0x01 => do_parse!(
-                data,
-                algo_count: le_u16
-                    >> salt_length: le_u16
-                    >> hash_algorithms:
-                        count!(
-                            map_opt!(le_u16, FromPrimitive::from_u16),
-                            usize::from(algo_count)
-                        )
-                    >> salt: take!(salt_length)
-                    >> (Context::PreauthIntegrityCapabilities(PreauthIntegrityCapabilities {
+            0x01 => do_parse!(data,
+                algo_count: le_u16 >>
+                salt_length: le_u16 >>
+                hash_algorithms:
+                    count!(
+                        map_opt!(le_u16, FromPrimitive::from_u16),
+                        usize::from(algo_count)
+                    ) >>
+                salt: take!(salt_length) >>
+                (Context::PreauthIntegrityCapabilities(PreauthIntegrityCapabilities {
                         hash_algorithms,
                         salt,
-                    }))
+                }))
             ),
-            0x02 => do_parse!(
-                data,
-                cipher_count: le_u16
-                    >> ciphers:
-                        count!(
-                            map_opt!(le_u16, FromPrimitive::from_u16),
-                            usize::from(cipher_count)
-                        )
-                    >> (Context::EncryptionCapabilities(ciphers))
+            0x02 => do_parse!(data,
+                cipher_count: le_u16 >>
+                ciphers:
+                    count!(
+                        map_opt!(le_u16, FromPrimitive::from_u16),
+                        usize::from(cipher_count)
+                    ) >>
+                (Context::EncryptionCapabilities(ciphers))
             ),
             _ => map!(data, rest, |d| Context::Unknown(d)),
         }
     }
 }
 
+#[rustfmt::skip]
 fn parse_negotiate_context(input: &[u8], packet_len: u32) -> IResult<&[u8], Context> {
-    let padding = (8 - ((packet_len - u32::try_from(input.len()).unwrap()) % 8)) % 8; /* align to 8 byte */
-    do_parse!(
-        input,
+    // pad to the next 8 byte aligned packet offset
+    let padding = (8 - ((packet_len - u32::try_from(input.len()).unwrap()) % 8)) % 8;
+    do_parse!(input,
         take!(padding) >>
         context_type: le_u16 >>
         data_length: le_u16 >>
@@ -114,6 +114,7 @@ fn parse_negotiate_context(input: &[u8], packet_len: u32) -> IResult<&[u8], Cont
     )
 }
 
+#[rustfmt::skip]
 fn parse_negotiate_contexts(
     input: &[u8],
     packet_length: u32,
@@ -121,8 +122,7 @@ fn parse_negotiate_contexts(
     count: u16,
 ) -> IResult<&[u8], Vec<Context>> {
     let current_pos = packet_length - u32::try_from(input.len()).unwrap();
-    let negot = do_parse!(
-        input,
+    let negot = do_parse!(input,
         verify!(value!(offset), |x| x >= current_pos) >>
         take!(offset - current_pos) >> /* optional padding */
         context: count!(apply!(parse_negotiate_context, packet_length), usize::from(count)) >>
@@ -131,11 +131,11 @@ fn parse_negotiate_contexts(
     negot
 }
 
+#[rustfmt::skip]
 #[allow(clippy::cyclomatic_complexity)]
 pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
     let packet_length = u32::try_from(data.len()).unwrap() + u32::from(HEADER_LEN);
-    do_parse!(
-        data,
+    do_parse!(data,
         verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
         dialect_count: verify!(le_u16, |x| x > 0) >>
         security_mode: map_opt!(le_u16, FromPrimitive::from_u16) >>
@@ -146,7 +146,16 @@ pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
         negot_context_count: le_u16 >>
         take!(2) >> /* reserved */
         dialects: count!(map_opt!(le_u16, FromPrimitive::from_u16), usize::from(dialect_count)) >>
-        negotiate_contexts: cond_with_error!(dialects.contains(&Dialect::Smb3_1_1), apply!(parse_negotiate_contexts, packet_length, negot_context_offset, negot_context_count)) >>
+        negotiate_contexts:
+            cond_with_error!(
+                dialects.contains(&Dialect::Smb3_1_1),
+                apply!(
+                    parse_negotiate_contexts,
+                    packet_length,
+                    negot_context_offset,
+                    negot_context_count
+                )
+            ) >>
         (Request {
             security_mode,
             capabilities,
