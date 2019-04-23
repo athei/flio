@@ -40,6 +40,27 @@ bitflags! {
     }
 }
 
+#[repr(u16)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(FromPrimitive, PartialEq, Eq)]
+pub enum HashAlgorithm {
+    Sha512 = 0x01,
+}
+
+#[repr(u16)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(FromPrimitive, PartialEq, Eq)]
+pub enum Cipher {
+    Aes128Ccm = 0x01,
+    Aes128Gcm = 0x02,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct PreauthIntegrityCapabilities<'a> {
+    pub hash_algorithms: Vec<HashAlgorithm>,
+    pub salt: &'a [u8],
+}
+
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Context<'a> {
     PreauthIntegrityCapabilities(PreauthIntegrityCapabilities<'a>),
@@ -78,27 +99,6 @@ impl<'a> Context<'a> {
             _ => map!(data, rest, |d| Context::Unknown(d)),
         }
     }
-}
-
-#[repr(u16)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(FromPrimitive)]
-pub enum HashAlgorithm {
-    Sha512 = 0x01,
-}
-
-#[repr(u16)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(FromPrimitive)]
-pub enum Cipher {
-    Aes128Ccm = 0x01,
-    Aes128Gcm = 0x02,
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub struct PreauthIntegrityCapabilities<'a> {
-    hash_algorithms: Vec<HashAlgorithm>,
-    salt: &'a [u8],
 }
 
 fn parse_negotiate_context(input: &[u8], packet_len: u32) -> IResult<&[u8], Context> {

@@ -129,17 +129,18 @@ fn negotiate_with_context_request() {
 
     let mut buffer = Vec::new();
     let request = &parse_pcap_requests("negotiate_with_context_request", &mut buffer).unwrap()[0];
-    let body;
     let client_guid = [
-        0xe8, 0xb8, 0x35, 0x76, 0xaa, 0x4f, 0x42, 0x58,
-        0x8c, 0xa2, 0xc7, 0xaa, 0xce, 0xa9, 0xba, 0x80
+        0xe8, 0xb8, 0x35, 0x76, 0xaa, 0x4f, 0x42, 0x58, 0x8c, 0xa2, 0xc7, 0xaa, 0xce, 0xa9, 0xba,
+        0x80,
     ];
-    let dialects = [
-        Dialect::Smb3_1_1,
+    let salt = [
+        0xb0, 0xb8, 0xe4, 0x0b, 0x3b, 0xa8, 0x3e, 0x60, 0x4e, 0xdc, 0xdd, 0x80, 0xa4, 0x3d, 0x23,
+        0xf7, 0x9a, 0x5d, 0x11, 0xc0, 0x97, 0xc4, 0x58, 0x8a, 0xfe, 0xa6, 0x91, 0xfa, 0x31, 0xb6,
+        0x8a, 0x7f,
     ];
-
-    match &request.body {
-        RequestBody::Negotiate(msg) => body = msg,
+    let dialects = [Dialect::Smb3_1_1];
+    let body = match &request.body {
+        RequestBody::Negotiate(msg) => msg,
         _ => panic!("Expected not implemented!"),
     };
 
@@ -157,7 +158,20 @@ fn negotiate_with_context_request() {
     assert_eq!(body.dialects, dialects);
     assert_eq!(body.negotiate_contexts.len(), 3);
 
-    let preauth_ctx = if let Context::PreauthIntegrityCapabilities(x) = &body.negotiate_contexts[0] { x } else { panic!("first is preauth")};
-    let enc_ctx = if let Context::EncryptionCapabilities(x) = &body.negotiate_contexts[0] { x } else { panic!("second is enc")};
-    let unknown = if let Context::Unknown(x) = body.negotiate_contexts[0] { x } else { panic!("third is unknown")};
+    if let Context::PreauthIntegrityCapabilities(x) = &body.negotiate_contexts[0] {
+        assert_eq!(x.hash_algorithms, [HashAlgorithm::Sha512]);
+        assert_eq!(x.salt, salt);
+    } else {
+        panic!("First context is PreauthIntegrityCapabilities")
+    };
+    if let Context::EncryptionCapabilities(x) = &body.negotiate_contexts[1] {
+        assert_eq!(x, &[Cipher::Aes128Ccm]);
+    } else {
+        panic!("Second context is EncryptionCapabilities")
+    };
+    if let Context::Unknown(x) = body.negotiate_contexts[2] {
+        assert_eq!(x, [0; 8]);
+    } else {
+        panic!("Third context is Unknown")
+    };
 }
