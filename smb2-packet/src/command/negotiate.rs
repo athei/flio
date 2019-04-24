@@ -1,5 +1,5 @@
 use crate::header::HEADER_LEN;
-use crate::Dialect;
+use crate::{ Dialect, SecurityMode };
 use bitflags::bitflags;
 use nom::*;
 use num_derive::FromPrimitive;
@@ -29,14 +29,6 @@ pub struct Response<'a> {
     pub server_start_time: std::time::SystemTime,
     pub security_buffer: Option<&'a [u8]>,
     pub negotiate_contexts: Vec<Context<'a>>,
-}
-
-#[repr(u16)]
-#[derive(FromPrimitive, Eq, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub enum SecurityMode {
-    SigningEnabled = 0x01,
-    SigningRequired = 0x02,
 }
 
 bitflags! {

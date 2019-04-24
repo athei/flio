@@ -7,7 +7,7 @@ mod common;
 
 use smb2_packet::command::{Command, RequestBody, ResponseBody};
 use smb2_packet::header::{Flags, Signature, SyncType};
-use smb2_packet::Dialect;
+use smb2_packet::{ Dialect, SecurityMode };
 
 use crate::common::{parse_pcap_requests, parse_pcap_responses};
 

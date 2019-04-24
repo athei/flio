@@ -1,9 +1,10 @@
 pub mod error;
 pub mod negotiate;
-
-use num_derive::FromPrimitive;
+pub mod session_setup;
 
 use crate::ntstatus::NTStatus;
+use crate::Dialect;
+use num_derive::FromPrimitive;
 
 #[repr(u16)]
 #[derive(FromPrimitive, PartialEq, Eq)]
@@ -33,12 +34,14 @@ pub enum Command {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum RequestBody<'a> {
     Negotiate(negotiate::Request<'a>),
+    SessionSetup(session_setup::Request<'a>),
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum ResponseBody<'a> {
     Negotiate(negotiate::Response<'a>),
+    SessionSetup(session_setup::Response<'a>),
     Error(error::Response),
     NotImplemented { command: Command, body: &'a [u8] },
 }
@@ -49,6 +52,7 @@ where
 {
     fn parse(
         body: &'a [u8],
+        dialect: Dialect,
         command: Command,
         status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>>;
@@ -57,11 +61,13 @@ where
 impl<'a> Body<'a> for RequestBody<'a> {
     fn parse(
         body: &'a [u8],
+        dialect: Dialect,
         command: Command,
         _status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>> {
         let cmd = match command {
             Command::Negotiate => RequestBody::Negotiate(negotiate::parse(body)?.1),
+            Command::SessionSetup => RequestBody::SessionSetup(session_setup::Request::parse(body, dialect)?.1),
             _ => RequestBody::NotImplemented { command, body },
         };
         Ok(cmd)
@@ -71,6 +77,7 @@ impl<'a> Body<'a> for RequestBody<'a> {
 impl<'a> Body<'a> for ResponseBody<'a> {
     fn parse(
         body: &'a [u8],
+        _dialect: Dialect,
         command: Command,
         status: Option<NTStatus>,
     ) -> Result<Self, nom::Err<&'a [u8]>> {

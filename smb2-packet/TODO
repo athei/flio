@@ -1,4 +1,3 @@
-s/cond/cond_with_error
-replace packet_start with a length
-    - modular arithmetic durch pointer arithmetic ersetze
-- remove as casts (use try from and exit when it does not fit)
+- credit charge in header: take when dialect too small
+- turn u32:try_from to as u32 because we know for sure it cannot happen (whole packet size in only 3 bytes)
+    - reason about truncation consequences

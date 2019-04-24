@@ -26,6 +26,14 @@ pub enum Dialect {
     Smb3_1_1 = 0x0311,
 }
 
+#[repr(u16)]
+#[derive(FromPrimitive, Eq, PartialEq)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum SecurityMode {
+    SigningEnabled = 0x01,
+    SigningRequired = 0x02,
+}
+
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Request<'a> {
     pub header: RequestHeader,
@@ -92,7 +100,7 @@ where
                         output.header,
                         complete!(
                             output.body,
-                            apply!(Self::Body::parse, output.command, status)
+                            apply!(Self::Body::parse, dialect, output.command, status)
                         )?,
                     ));
                     if remainder.is_empty() {
