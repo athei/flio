@@ -1,3 +1,1 @@
 - credit charge in header: take when dialect too small
-- turn u32:try_from to as u32 because we know for sure it cannot happen (whole packet size in only 3 bytes)
-    - reason about truncation consequences

@@ -4,7 +4,6 @@ use bitflags::bitflags;
 use nom::*;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
-use std::convert::TryFrom;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 36;
 
@@ -104,9 +103,10 @@ impl<'a> Context<'a> {
 }
 
 #[rustfmt::skip]
+#[allow(clippy::cast_possible_truncation)]
 fn parse_negotiate_context(input: &[u8], packet_len: u32) -> IResult<&[u8], Context> {
     // pad to the next 8 byte aligned packet offset
-    let padding = (8 - ((packet_len - u32::try_from(input.len()).unwrap()) % 8)) % 8;
+    let padding = (8 - ((packet_len - input.len() as u32) % 8)) % 8;
     do_parse!(input,
         take!(padding) >>
         context_type: le_u16 >>
@@ -118,13 +118,14 @@ fn parse_negotiate_context(input: &[u8], packet_len: u32) -> IResult<&[u8], Cont
 }
 
 #[rustfmt::skip]
+#[allow(clippy::cast_possible_truncation)]
 fn parse_negotiate_contexts(
     input: &[u8],
     packet_length: u32,
     offset: u32,
     count: u16,
 ) -> IResult<&[u8], Vec<Context>> {
-    let current_pos = packet_length - u32::try_from(input.len()).unwrap();
+    let current_pos = packet_length - input.len() as u32;
     let negot = do_parse!(input,
         verify!(value!(offset), |x| x >= current_pos) >>
         take!(offset - current_pos) >> /* optional padding */
@@ -136,8 +137,9 @@ fn parse_negotiate_contexts(
 
 #[rustfmt::skip]
 #[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cast_possible_truncation)]
 pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
-    let packet_length = u32::try_from(data.len()).unwrap() + u32::from(HEADER_LEN);
+    let packet_length = data.len() as u32 + u32::from(HEADER_LEN);
     do_parse!(data,
         verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
         dialect_count: verify!(le_u16, |x| x > 0) >>
