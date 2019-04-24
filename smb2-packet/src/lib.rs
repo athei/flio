@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![deny(clippy::correctness)]
-#![allow(clippy::useless_attribute)]
 
 pub mod command;
 pub mod header;
