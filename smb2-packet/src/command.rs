@@ -3,6 +3,7 @@ pub mod logoff;
 pub mod negotiate;
 pub mod session_setup;
 pub mod tree_connect;
+pub mod tree_disconnect;
 
 use crate::header::Command;
 use crate::ntstatus::NTStatus;
@@ -14,6 +15,7 @@ pub enum RequestBody<'a> {
     SessionSetup(session_setup::Request<'a>),
     Logoff,
     TreeConnect(tree_connect::Request),
+    TreeDisconnect,
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
@@ -23,6 +25,7 @@ pub enum ResponseBody<'a> {
     SessionSetup(session_setup::Response<'a>),
     Logoff,
     TreeConnect(tree_connect::Response),
+    TreeDisconnect,
     Error(error::Response),
     NotImplemented { command: Command, body: &'a [u8] },
 }
@@ -54,8 +57,12 @@ impl<'a> Body<'a> for RequestBody<'a> {
             Command::Logoff => {
                 logoff::parse_request(body)?;
                 RequestBody::Logoff
-            },
+            }
             Command::TreeConnect => RequestBody::TreeConnect(tree_connect::parse_request(body)?.1),
+            Command::TreeDisconnect => {
+                tree_disconnect::parse_request(body)?;
+                RequestBody::TreeDisconnect
+            }
             _ => RequestBody::NotImplemented { command, body },
         };
         Ok(cmd)
