@@ -2,6 +2,7 @@ pub mod error;
 pub mod negotiate;
 pub mod session_setup;
 pub mod logoff;
+pub mod tree_connect;
 
 use crate::ntstatus::NTStatus;
 use crate::header::Command;

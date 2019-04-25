@@ -35,7 +35,7 @@ bitflags! {
     pub struct SessionFlags: u16 {
         const IS_GUEST = 0x01;
         const IS_NULL = 0x02;
-        const ENCRYPT_DATA = 0x03;
+        const ENCRYPT_DATA = 0x04;
     }
 }
 
