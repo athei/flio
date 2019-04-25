@@ -1,40 +1,17 @@
 pub mod error;
 pub mod negotiate;
 pub mod session_setup;
+pub mod logoff;
 
 use crate::ntstatus::NTStatus;
+use crate::header::Command;
 use crate::Dialect;
-use num_derive::FromPrimitive;
-
-#[repr(u16)]
-#[derive(FromPrimitive, PartialEq, Eq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub enum Command {
-    Negotiate = 0x00,
-    SessionSetup = 0x01,
-    Logoff = 0x02,
-    TreeConnect = 0x03,
-    TreeDisconnect = 0x04,
-    Create = 0x05,
-    Close = 0x06,
-    Flush = 0x07,
-    Read = 0x08,
-    Write = 0x09,
-    Lock = 0x0A,
-    Ioctl = 0x0B,
-    Cancel = 0x0C,
-    Echo = 0x0D,
-    QueryDirectory = 0x0E,
-    ChangeNotify = 0x0F,
-    QueryInfo = 0x10,
-    SetInfo = 0x11,
-    OplockBreak = 0x12,
-}
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum RequestBody<'a> {
     Negotiate(negotiate::Request<'a>),
     SessionSetup(session_setup::Request<'a>),
+    Logoff,
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
@@ -42,6 +19,7 @@ pub enum RequestBody<'a> {
 pub enum ResponseBody<'a> {
     Negotiate(negotiate::Response<'a>),
     SessionSetup(session_setup::Response<'a>),
+    Logoff,
     Error(error::Response),
     NotImplemented { command: Command, body: &'a [u8] },
 }
@@ -68,7 +46,12 @@ impl<'a> Body<'a> for RequestBody<'a> {
         let cmd = match command {
             Command::Negotiate => RequestBody::Negotiate(negotiate::parse(body)?.1),
             Command::SessionSetup => {
-                RequestBody::SessionSetup(session_setup::Request::parse(body, dialect)?.1)
+                RequestBody::SessionSetup(session_setup::parse_request(body, dialect)?.1)
+            },
+            Command::Logoff => {
+                println!("LOL");
+                logoff::parse_request(body)?;
+                RequestBody::Logoff
             }
             _ => RequestBody::NotImplemented { command, body },
         };
