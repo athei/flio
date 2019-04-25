@@ -10,6 +10,30 @@ use crate::Dialect;
 pub const STRUCTURE_SIZE: u16 = 64;
 pub const SIG_SIZE: usize = 16;
 
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct Request {
+    pub credit_charge: Option<u16>,
+    pub credit_request: u16,
+    pub channel_sequence: Option<u16>,
+    pub flags: Flags,
+    pub message_id: u64,
+    pub sync_type: SyncType,
+    pub session_id: u64,
+    pub signature: Signature,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct Response {
+    pub credit_charge: Option<u16>,
+    pub credit_response: u16,
+    pub status: NTStatus,
+    pub flags: Flags,
+    pub message_id: u64,
+    pub sync_type: SyncType,
+    pub session_id: u64,
+    pub signature: Signature,
+}
+
 bitflags! {
     pub struct Flags: u32 {
         const SERVER_TO_REDIR = 0x1;
@@ -75,7 +99,7 @@ where
         do_parse!(input,
             tag!(b"\xfeSMB") >>
             verify!(le_u16, |v| v == STRUCTURE_SIZE) >>
-            credit_charge: cond_with_error!(dialect > Dialect::Smb2_0_2, le_u16) >>
+            credit_charge: le_u16 >>
             status_bytes: take!(4) >>
             command: map_opt!(le_u16, FromPrimitive::from_u16) >>
             credit_req_grant: le_u16 >>
@@ -108,7 +132,7 @@ where
             ) >>
             (
                 ParseResult::<Self>::new( Self::new (
-                        credit_charge,
+                        if dialect > Dialect::Smb2_0_2 { Some(credit_charge) } else { None },
                         credit_req_grant,
                         channel_sequence,
                         status,
@@ -130,30 +154,6 @@ where
             )
         )
     }
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Request {
-    pub credit_charge: Option<u16>,
-    pub credit_request: u16,
-    pub channel_sequence: Option<u16>,
-    pub flags: Flags,
-    pub message_id: u64,
-    pub sync_type: SyncType,
-    pub session_id: u64,
-    pub signature: Signature,
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Response {
-    pub credit_charge: Option<u16>,
-    pub credit_response: u16,
-    pub status: NTStatus,
-    pub flags: Flags,
-    pub message_id: u64,
-    pub sync_type: SyncType,
-    pub session_id: u64,
-    pub signature: Signature,
 }
 
 pub struct ParseResult<'a, T>
