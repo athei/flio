@@ -34,7 +34,6 @@ pub struct Response {
     pub signature: Signature,
 }
 
-
 #[repr(u16)]
 #[derive(FromPrimitive, PartialEq, Eq)]
 #[cfg_attr(debug_assertions, derive(Debug))]

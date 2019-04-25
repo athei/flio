@@ -90,7 +90,8 @@ fn negotiate_request() {
     use smb2_packet::command::negotiate::*;
 
     let mut buffer = Vec::new();
-    let request = &parse_pcap_requests("negotiate_request", &mut buffer, Dialect::Smb2_0_2).unwrap()[0];
+    let request =
+        &parse_pcap_requests("negotiate_request", &mut buffer, Dialect::Smb2_0_2).unwrap()[0];
     let body;
     let client_guid = [
         0xa3, 0x09, 0x6f, 0x6d, 0x22, 0xc1, 0x53, 0x79, 0x9d, 0x99, 0x95, 0xf3, 0xb3, 0xd7, 0xb9,
@@ -128,7 +129,12 @@ fn negotiate_with_context_request() {
     use smb2_packet::command::negotiate::*;
 
     let mut buffer = Vec::new();
-    let request = &parse_pcap_requests("negotiate_with_context_request", &mut buffer, Dialect::Smb3_1_1).unwrap()[0];
+    let request = &parse_pcap_requests(
+        "negotiate_with_context_request",
+        &mut buffer,
+        Dialect::Smb3_1_1,
+    )
+    .unwrap()[0];
     let client_guid = [
         0xe8, 0xb8, 0x35, 0x76, 0xaa, 0x4f, 0x42, 0x58, 0x8c, 0xa2, 0xc7, 0xaa, 0xce, 0xa9, 0xba,
         0x80,

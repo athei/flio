@@ -1,11 +1,11 @@
 pub mod error;
+pub mod logoff;
 pub mod negotiate;
 pub mod session_setup;
-pub mod logoff;
 pub mod tree_connect;
 
-use crate::ntstatus::NTStatus;
 use crate::header::Command;
+use crate::ntstatus::NTStatus;
 use crate::Dialect;
 
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -13,6 +13,7 @@ pub enum RequestBody<'a> {
     Negotiate(negotiate::Request<'a>),
     SessionSetup(session_setup::Request<'a>),
     Logoff,
+    TreeConnect(tree_connect::Request),
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
@@ -21,6 +22,7 @@ pub enum ResponseBody<'a> {
     Negotiate(negotiate::Response<'a>),
     SessionSetup(session_setup::Response<'a>),
     Logoff,
+    TreeConnect(tree_connect::Response),
     Error(error::Response),
     NotImplemented { command: Command, body: &'a [u8] },
 }
@@ -48,12 +50,12 @@ impl<'a> Body<'a> for RequestBody<'a> {
             Command::Negotiate => RequestBody::Negotiate(negotiate::parse(body)?.1),
             Command::SessionSetup => {
                 RequestBody::SessionSetup(session_setup::parse_request(body, dialect)?.1)
-            },
+            }
             Command::Logoff => {
-                println!("LOL");
                 logoff::parse_request(body)?;
                 RequestBody::Logoff
-            }
+            },
+            Command::TreeConnect => RequestBody::TreeConnect(tree_connect::parse_request(body)?.1),
             _ => RequestBody::NotImplemented { command, body },
         };
         Ok(cmd)
