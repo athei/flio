@@ -14,7 +14,7 @@ use crate::common::{parse_pcap_requests, parse_pcap_responses};
 #[test]
 fn all_requests_just_parse() {
     let mut buffer = Vec::new();
-    let requests = parse_pcap_requests("all_requests", &mut buffer).unwrap();
+    let requests = parse_pcap_requests("all_requests", &mut buffer, Dialect::Smb3_1_1).unwrap();
     let len = requests.len();
     let len_should = 799;
     assert!(
@@ -28,7 +28,7 @@ fn all_requests_just_parse() {
 #[test]
 fn all_responses_just_parse() {
     let mut buffer = Vec::new();
-    let responses = parse_pcap_responses("all_responses", &mut buffer).unwrap();
+    let responses = parse_pcap_responses("all_responses", &mut buffer, Dialect::Smb3_1_1).unwrap();
     let len = responses.len();
     let len_should = 244;
     assert!(
@@ -42,7 +42,7 @@ fn all_responses_just_parse() {
 #[test]
 fn header1() {
     let mut buffer = Vec::new();
-    let request = &parse_pcap_requests("header1", &mut buffer).unwrap()[0];
+    let request = &parse_pcap_requests("header1", &mut buffer, Dialect::Smb3_1_1).unwrap()[0];
     let header = &request.header;
 
     assert_eq!(header.credit_charge, Some(0));
@@ -63,7 +63,7 @@ fn header1() {
 #[test]
 fn header2() {
     let mut buffer = Vec::new();
-    let request = &parse_pcap_responses("header2", &mut buffer).unwrap()[0];
+    let request = &parse_pcap_responses("header2", &mut buffer, Dialect::Smb3_1_1).unwrap()[0];
     let header = &request.header;
 
     assert_eq!(header.credit_charge, Some(0));
@@ -90,7 +90,7 @@ fn negotiate_request() {
     use smb2_packet::command::negotiate::*;
 
     let mut buffer = Vec::new();
-    let request = &parse_pcap_requests("negotiate_request", &mut buffer).unwrap()[0];
+    let request = &parse_pcap_requests("negotiate_request", &mut buffer, Dialect::Smb3_1_1).unwrap()[0];
     let body;
     let client_guid = [
         0xa3, 0x09, 0x6f, 0x6d, 0x22, 0xc1, 0x53, 0x79, 0x9d, 0x99, 0x95, 0xf3, 0xb3, 0xd7, 0xb9,
@@ -128,7 +128,7 @@ fn negotiate_with_context_request() {
     use smb2_packet::command::negotiate::*;
 
     let mut buffer = Vec::new();
-    let request = &parse_pcap_requests("negotiate_with_context_request", &mut buffer).unwrap()[0];
+    let request = &parse_pcap_requests("negotiate_with_context_request", &mut buffer, Dialect::Smb3_1_1).unwrap()[0];
     let client_guid = [
         0xe8, 0xb8, 0x35, 0x76, 0xaa, 0x4f, 0x42, 0x58, 0x8c, 0xa2, 0xc7, 0xaa, 0xce, 0xa9, 0xba,
         0x80,

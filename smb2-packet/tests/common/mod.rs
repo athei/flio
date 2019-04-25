@@ -30,12 +30,12 @@ fn get_payload<'a>(packet: &'a IPPacket<'a>) -> &'a [u8] {
     }
 }
 
-fn response(data: &[u8]) -> IResult<&[u8], Vec<Response>> {
-    parse::<Response>(data, Dialect::Smb3_1_1)
+fn response(data: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Response>> {
+    parse::<Response>(data, dialect)
 }
 
-fn request(data: &[u8]) -> IResult<&[u8], Vec<Request>> {
-    parse::<Request>(data, Dialect::Smb3_1_1)
+fn request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Vec<Request>> {
+    parse::<Request>(data, dialect)
 }
 
 fn request_smb1_nego(data: &[u8]) -> IResult<&[u8], Vec<V1NegotRequest>> {
@@ -45,15 +45,17 @@ fn request_smb1_nego(data: &[u8]) -> IResult<&[u8], Vec<V1NegotRequest>> {
 pub fn parse_pcap_responses<'a>(
     name: &str,
     buffer: &'a mut Vec<u8>,
+    dialect: Dialect,
 ) -> Result<Vec<Response<'a>>, String> {
-    parse_pcap(name, buffer, response)
+    parse_pcap(name, buffer, |data| response(data, dialect))
 }
 
 pub fn parse_pcap_requests<'a>(
     name: &str,
     buffer: &'a mut Vec<u8>,
+    dialect: Dialect,
 ) -> Result<Vec<Request<'a>>, String> {
-    parse_pcap(name, buffer, request)
+    parse_pcap(name, buffer, |data| request(data, dialect))
 }
 
 pub fn parse_pcap_smb1nego(
