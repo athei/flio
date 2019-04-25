@@ -7,7 +7,7 @@ mod common;
 
 use smb2_packet::command::{Command, RequestBody, ResponseBody};
 use smb2_packet::header::{Flags, Signature, SyncType};
-use smb2_packet::{ Dialect, SecurityMode };
+use smb2_packet::Dialect;
 
 use crate::common::{parse_pcap_requests, parse_pcap_responses};
 
@@ -16,7 +16,7 @@ fn all_requests_just_parse() {
     let mut buffer = Vec::new();
     let requests = parse_pcap_requests("all_requests", &mut buffer).unwrap();
     let len = requests.len();
-    let len_should = 801;
+    let len_should = 799;
     assert!(
         len == len_should,
         "Length should be {} but is {}",
@@ -108,7 +108,7 @@ fn negotiate_request() {
         _ => panic!("Expected not implemented!"),
     };
 
-    assert_eq!(body.security_mode, SecurityMode::SigningEnabled);
+    assert_eq!(body.signing_required, false);
     assert_eq!(
         body.capabilities,
         Capabilities::DFS
@@ -144,7 +144,7 @@ fn negotiate_with_context_request() {
         _ => panic!("Expected not implemented!"),
     };
 
-    assert_eq!(body.security_mode, SecurityMode::SigningEnabled);
+    assert_eq!(body.signing_required, false);
     assert_eq!(
         body.capabilities,
         Capabilities::DFS

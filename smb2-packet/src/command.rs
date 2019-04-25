@@ -67,7 +67,9 @@ impl<'a> Body<'a> for RequestBody<'a> {
     ) -> Result<Self, nom::Err<&'a [u8]>> {
         let cmd = match command {
             Command::Negotiate => RequestBody::Negotiate(negotiate::parse(body)?.1),
-            Command::SessionSetup => RequestBody::SessionSetup(session_setup::Request::parse(body, dialect)?.1),
+            Command::SessionSetup => {
+                RequestBody::SessionSetup(session_setup::Request::parse(body, dialect)?.1)
+            }
             _ => RequestBody::NotImplemented { command, body },
         };
         Ok(cmd)

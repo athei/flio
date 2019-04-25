@@ -1,5 +1,4 @@
-use crate::header::HEADER_LEN;
-use crate::{ Dialect, SecurityMode };
+use crate::Dialect;
 use bitflags::bitflags;
 use nom::*;
 use num_derive::FromPrimitive;
@@ -9,7 +8,7 @@ const REQUEST_STRUCTURE_SIZE: u16 = 36;
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Request<'a> {
-    pub security_mode: SecurityMode,
+    pub signing_required: bool,
     pub capabilities: Capabilities,
     pub client_guid: &'a [u8],
     pub dialects: Vec<crate::Dialect>,
@@ -18,7 +17,7 @@ pub struct Request<'a> {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Response<'a> {
-    pub security_mode: SecurityMode,
+    pub signing_required: bool,
     pub dialect: Dialect,
     pub server_guid: &'a [u8],
     pub capabilities: Capabilities,
@@ -139,11 +138,11 @@ fn parse_negotiate_contexts(
 #[allow(clippy::cyclomatic_complexity)]
 #[allow(clippy::cast_possible_truncation)]
 pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
-    let packet_length = data.len() as u32 + u32::from(HEADER_LEN);
+    let packet_length = data.len() as u32 + u32::from(crate::header::STRUCTURE_SIZE);
     do_parse!(data,
         verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
         dialect_count: verify!(le_u16, |x| x > 0) >>
-        security_mode: map_opt!(le_u16, FromPrimitive::from_u16) >>
+        security_mode: le_u16 >>
         take!(2) >> /* reserved */
         capabilities: map_opt!(le_u32, Capabilities::from_bits) >>
         client_guid: take!(16) >>
@@ -162,7 +161,7 @@ pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
                 )
             ) >>
         (Request {
-            security_mode,
+            signing_required: (security_mode & 0x02) != 0,
             capabilities,
             client_guid,
             dialects,

@@ -7,7 +7,7 @@ use crate::command::Command;
 use crate::ntstatus::NTStatus;
 use crate::Dialect;
 
-pub const HEADER_LEN: u16 = 64;
+pub const STRUCTURE_SIZE: u16 = 64;
 pub const SIG_SIZE: usize = 16;
 
 bitflags! {
@@ -74,7 +74,7 @@ where
     {
         do_parse!(input,
             tag!(b"\xfeSMB") >>
-            verify!(le_u16, |v| v == HEADER_LEN) >>
+            verify!(le_u16, |v| v == STRUCTURE_SIZE) >>
             credit_charge: cond_with_error!(dialect > Dialect::Smb2_0_2, le_u16) >>
             status_bytes: take!(4) >>
             command: map_opt!(le_u16, FromPrimitive::from_u16) >>
@@ -102,8 +102,8 @@ where
             async_id: cond_with_error!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
             session_id: le_u64 >>
             signature: map!(take!(SIG_SIZE), copy_sig) >>
-            body: switch!(value!(next_command > u32::from(HEADER_LEN)),
-                true => take!(next_command - u32::from(HEADER_LEN)) |
+            body: switch!(value!(next_command > u32::from(STRUCTURE_SIZE)),
+                true => take!(next_command - u32::from(STRUCTURE_SIZE)) |
                 false => call!(rest)
             ) >>
             (
