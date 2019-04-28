@@ -13,6 +13,7 @@ use crate::header::Header;
 use crate::header::Request as RequestHeader;
 use crate::header::Response as ResponseHeader;
 use num_derive::FromPrimitive;
+use std::convert::TryInto;
 
 #[repr(u16)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromPrimitive)]
@@ -24,6 +25,19 @@ pub enum Dialect {
     Smb3_0_0 = 0x0300,
     Smb3_0_2 = 0x0302,
     Smb3_1_1 = 0x0311,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct FileId {
+    data: [u8; 16],
+}
+
+impl FileId {
+    fn from_slice(id: &[u8]) -> FileId {
+        let data: [u8; 16] = id.try_into().unwrap();
+        Self { data }
+    }
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

@@ -1,4 +1,2 @@
-- credit charge in header: take when dialect too small
-- split request data file in multiple dialects
 - shrink all enums and bitflags to the required size
 - utf16 support for big endian machine

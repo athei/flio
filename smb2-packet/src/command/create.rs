@@ -5,35 +5,36 @@ use nom::*;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use std::time::SystemTime;
+use crate::FileId;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 57;
 const REQUEST_CONSTANT_SIZE: u16 = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Request {
-    requested_oplock_level: OplockLevel,
-    impersonation_level: ImpersonationLevel,
-    desired_access: u32,  // TODO: add proper type
-    file_attributes: u32, // TODO: add type
-    share_access: ShareAccess,
-    create_disposition: CreateDisposition,
-    create_options: u32, // TODO: add type
-    name: String,
+    pub requested_oplock_level: OplockLevel,
+    pub impersonation_level: ImpersonationLevel,
+    pub desired_access: u32,  // TODO: add proper type
+    pub file_attributes: u32, // TODO: add type
+    pub share_access: ShareAccess,
+    pub create_disposition: CreateDisposition,
+    pub create_options: u32, // TODO: add type
+    pub name: String,
     // TODO: add contexts
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Response {
-    oplock_level: OplockLevel,
-    flags: Flags,
-    create_action: CreateAction,
-    creation_time: SystemTime,
-    last_access_time: SystemTime,
-    change_time: SystemTime,
-    allocation_size: u64,
-    end_of_file: u64,
-    file_attributes: u32, // TODO: add type
-    file_id: [u8; 16],
+    pub oplock_level: OplockLevel,
+    pub flags: Flags,
+    pub create_action: CreateAction,
+    pub creation_time: SystemTime,
+    pub last_access_time: SystemTime,
+    pub change_time: SystemTime,
+    pub allocation_size: u64,
+    pub end_of_file: u64,
+    pub file_attributes: u32, // TODO: add type
+    pub file_id: FileId,
     // TODO: add create contexts
 }
 
