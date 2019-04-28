@@ -14,6 +14,7 @@ use crate::header::Request as RequestHeader;
 use crate::header::Response as ResponseHeader;
 use num_derive::FromPrimitive;
 use std::convert::TryInto;
+use std::ops::Deref;
 
 #[repr(u16)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromPrimitive)]
@@ -34,9 +35,30 @@ pub struct FileId {
 }
 
 impl FileId {
-    fn from_slice(id: &[u8]) -> FileId {
+    fn from_slice(id: &[u8]) -> Self {
         let data: [u8; 16] = id.try_into().unwrap();
         Self { data }
+    }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct ClientGuid {
+    data: [u8; 16],
+}
+
+impl ClientGuid {
+    fn from_slice(id: &[u8]) -> Self {
+        let data: [u8; 16] = id.try_into().unwrap();
+        Self { data }
+    }
+}
+
+impl Deref for ClientGuid {
+    type Target = [u8; 16];
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
     }
 }
 

@@ -8,8 +8,8 @@ mod common;
 use smb2_packet::command::{RequestBody, ResponseBody};
 use smb2_packet::header::{Command, Flags, Signature, SyncType};
 use smb2_packet::Dialect;
-
 use crate::common::{parse_pcap_requests, parse_pcap_responses};
+use std::ops::Deref;
 
 #[test]
 fn all_requests_just_parse() {
@@ -119,7 +119,7 @@ fn negotiate_request() {
             | Capabilities::DIRECTORY_LEASING
             | Capabilities::ENCRYPTION
     );
-    assert_eq!(body.client_guid, client_guid);
+    assert_eq!(body.client_guid.deref(), &client_guid);
     assert_eq!(body.dialects, dialects);
     assert_eq!(body.negotiate_contexts.len(), 0);
 }
@@ -160,7 +160,7 @@ fn negotiate_with_context_request() {
             | Capabilities::DIRECTORY_LEASING
             | Capabilities::ENCRYPTION
     );
-    assert_eq!(body.client_guid, client_guid);
+    assert_eq!(body.client_guid.deref(), &client_guid);
     assert_eq!(body.dialects, dialects);
     assert_eq!(body.negotiate_contexts.len(), 3);
 

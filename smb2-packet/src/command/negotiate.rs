@@ -1,4 +1,4 @@
-use crate::Dialect;
+use crate::{ Dialect, ClientGuid };
 use bitflags::bitflags;
 use nom::*;
 use num_derive::FromPrimitive;
@@ -10,7 +10,7 @@ const REQUEST_STRUCTURE_SIZE: u16 = 36;
 pub struct Request<'a> {
     pub signing_required: bool,
     pub capabilities: Capabilities,
-    pub client_guid: &'a [u8],
+    pub client_guid: ClientGuid,
     pub dialects: Vec<crate::Dialect>,
     pub negotiate_contexts: Vec<Context<'a>>,
 }
@@ -19,7 +19,7 @@ pub struct Request<'a> {
 pub struct Response<'a> {
     pub signing_required: bool,
     pub dialect: Dialect,
-    pub server_guid: &'a [u8],
+    pub server_guid: ClientGuid,
     pub capabilities: Capabilities,
     pub max_transact_size: u32,
     pub max_read_size: u32,
@@ -145,7 +145,7 @@ pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
         security_mode: le_u16 >>
         take!(2) >> /* reserved */
         capabilities: map_opt!(le_u32, |x| Capabilities::from_bits(x as u8)) >>
-        client_guid: take!(16) >>
+        client_guid: map!(take!(16), ClientGuid::from_slice) >>
         negot_context_offset: le_u32 >>
         negot_context_count: le_u16 >>
         take!(2) >> /* reserved */
