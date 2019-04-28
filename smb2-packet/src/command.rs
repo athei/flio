@@ -4,6 +4,7 @@ pub mod error;
 pub mod flush;
 pub mod logoff;
 pub mod negotiate;
+pub mod read;
 pub mod session_setup;
 pub mod tree_connect;
 pub mod tree_disconnect;
@@ -22,6 +23,7 @@ pub enum RequestBody<'a> {
     Create(create::Request),
     Close(close::Request),
     Flush(flush::Request),
+    Read(read::Request<'a>),
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
@@ -36,6 +38,7 @@ pub enum ResponseBody<'a> {
     Close(close::Response),
     Flush,
     Error(error::Response),
+    Read(read::Response<'a>),
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
@@ -75,6 +78,7 @@ impl<'a> Body<'a> for RequestBody<'a> {
             Command::Create => RequestBody::Create(create::parse_request(body, dialect)?.1),
             Command::Close => RequestBody::Close(close::parse_request(body)?.1),
             Command::Flush => RequestBody::Flush(flush::parse_request(body)?.1),
+            Command::Read => RequestBody::Read(read::parse_request(body, dialect)?.1),
             _ => RequestBody::NotImplemented { command, body },
         };
         Ok(cmd)
