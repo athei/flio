@@ -26,13 +26,13 @@ bitflags! {
 }
 
 bitflags! {
-    pub struct Capabilities: u32 {
+    pub struct Capabilities: u8 {
         const DFS = 0x01;
     }
 }
 
 bitflags! {
-    pub struct SessionFlags: u16 {
+    pub struct SessionFlags: u8 {
         const IS_GUEST = 0x01;
         const IS_NULL = 0x02;
         const ENCRYPT_DATA = 0x04;
@@ -49,7 +49,7 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> nom::IResult<&[u8], Reque
         flags: map_opt!(le_u8, Flags::from_bits) >>
         cond!(dialect >= Dialect::Smb3_0_0, verify!(value!(flags.is_empty()), |x| x)) >>
         security_mode: le_u8 >>
-        capabilities: map!(le_u32, Capabilities::from_bits_truncate) >>
+        capabilities: map!(le_u32, |x| Capabilities::from_bits_truncate(x as u8)) >>
         take!(4) >> /* ignore Channel */
         security_buffer_offset: verify!(le_u16, |offset| offset >= constant_size) >>
         security_buffer_length: le_u16 >>

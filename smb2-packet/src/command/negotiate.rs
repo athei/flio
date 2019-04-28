@@ -30,7 +30,7 @@ pub struct Response<'a> {
 }
 
 bitflags! {
-    pub struct Capabilities: u32 {
+    pub struct Capabilities: u8 {
         const DFS = 0x01;
         const LEASING = 0x02;
         const LARGE_MTU = 0x04;
@@ -41,14 +41,14 @@ bitflags! {
     }
 }
 
-#[repr(u16)]
+#[repr(u8)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(FromPrimitive, PartialEq, Eq)]
 pub enum HashAlgorithm {
     Sha512 = 0x01,
 }
 
-#[repr(u16)]
+#[repr(u8)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(FromPrimitive, PartialEq, Eq)]
 pub enum Cipher {
@@ -144,7 +144,7 @@ pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
         dialect_count: verify!(le_u16, |x| x > 0) >>
         security_mode: le_u16 >>
         take!(2) >> /* reserved */
-        capabilities: map_opt!(le_u32, Capabilities::from_bits) >>
+        capabilities: map_opt!(le_u32, |x| Capabilities::from_bits(x as u8)) >>
         client_guid: take!(16) >>
         negot_context_offset: le_u32 >>
         negot_context_count: le_u16 >>

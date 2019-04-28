@@ -24,7 +24,7 @@ pub struct Response {
 }
 
 bitflags! {
-    struct Flags: u16 {
+    struct Flags: u8 {
         const POSTQUERY_ATTRIB = 0x01;
     }
 }
@@ -34,7 +34,7 @@ bitflags! {
 pub fn parse_request(data: &[u8]) -> IResult<&[u8], Request> {
     do_parse!(data,
         verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
-        flags: map_opt!(le_u16, Flags::from_bits) >>
+        flags: map_opt!(le_u16, |x| Flags::from_bits(x as u8)) >>
         take!(4) >> /* reserved */
         file_id: map!(take!(16), FileId::from_slice) >>
         (Request {
