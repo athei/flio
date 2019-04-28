@@ -1,11 +1,11 @@
 use crate::utf16le_to_string;
 use crate::Dialect;
+use crate::FileId;
 use bitflags::bitflags;
 use nom::*;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use std::time::SystemTime;
-use crate::FileId;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 57;
 const REQUEST_CONSTANT_SIZE: u16 = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;

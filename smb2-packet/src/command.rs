@@ -1,6 +1,7 @@
 pub mod close;
 pub mod create;
 pub mod error;
+pub mod flush;
 pub mod logoff;
 pub mod negotiate;
 pub mod session_setup;
@@ -17,9 +18,10 @@ pub enum RequestBody<'a> {
     SessionSetup(session_setup::Request<'a>),
     Logoff,
     TreeConnect(tree_connect::Request),
+    TreeDisconnect,
     Create(create::Request),
     Close(close::Request),
-    TreeDisconnect,
+    Flush(flush::Request),
     NotImplemented { command: Command, body: &'a [u8] },
 }
 
@@ -32,6 +34,7 @@ pub enum ResponseBody<'a> {
     TreeDisconnect,
     Create(create::Response),
     Close(close::Response),
+    Flush,
     Error(error::Response),
     NotImplemented { command: Command, body: &'a [u8] },
 }
@@ -71,6 +74,7 @@ impl<'a> Body<'a> for RequestBody<'a> {
             }
             Command::Create => RequestBody::Create(create::parse_request(body, dialect)?.1),
             Command::Close => RequestBody::Close(close::parse_request(body)?.1),
+            Command::Flush => RequestBody::Flush(flush::parse_request(body)?.1),
             _ => RequestBody::NotImplemented { command, body },
         };
         Ok(cmd)
