@@ -1,3 +1,4 @@
+use crate::utf16le_to_string;
 use bitflags::bitflags;
 use nom::*;
 use num_derive::FromPrimitive;
@@ -88,22 +89,4 @@ pub fn parse_request(data: &[u8]) -> IResult<&[u8], Request> {
             path,
         })
     )
-}
-
-fn utf16le_to_string<'a>(data: &'a [u8]) -> Result<String, String> {
-    use std::mem::transmute;
-
-    if data.len() % 2 != 0 {
-        return Err("UTF-16 string length must be even".to_string());
-    }
-
-    // &[u8] -> &[u16] safe cause whe checked for an even length
-    let ptr = unsafe {
-        let ptr: *const u16 = transmute(data.as_ptr());
-        std::slice::from_raw_parts::<'a>(ptr, data.len() / 2)
-    };
-
-    // TODO: endian conversion: use SmallVec or extra utf16 crate
-
-    String::from_utf16(ptr).map_err(|err| err.to_string())
 }
