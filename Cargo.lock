@@ -283,11 +283,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "smallvec"
-version = "0.6.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
 name = "smb2-packet"
 version = "0.1.0"
 dependencies = [
@@ -298,7 +293,6 @@ dependencies = [
  "num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pcarp 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "pnet_packet 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "smallvec 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "strum 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "strum_macros 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -499,7 +493,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)" = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 "checksum safemem 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e27a8b19b835f7aea908818e871f5cc3a5a186550c30773be987e155e8163d8f"
 "checksum slice-deque 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)" = "d39fca478d10e201944a8e21f4393d6bfe38fa3b16a152050e4d097fe2bbf494"
-"checksum smallvec 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)" = "c4488ae950c49d403731982257768f48fada354a5203fe81f9bb6f43ca9002be"
 "checksum strum 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f6b3fc98c482ff9bb37a6db6a6491218c4c82bec368bd5682033e5b96b969143"
 "checksum strum_macros 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6969d7021d96b53b12b774d4f412026f1debe7f168a0b8c59e93b4c1e850a05f"
 "checksum syn 0.15.32 (registry+https://github.com/rust-lang/crates.io-index)" = "846620ec526c1599c070eff393bfeeeb88a93afa2513fc3b49f1fea84cf7b0ed"

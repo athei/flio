@@ -15,7 +15,6 @@ nom = "4"
 bitflags = "1"
 num-traits = "0.2"
 num-derive = "0.2"
-smallvec = "0.6"
 
 [dev-dependencies]
 pcarp = "1"
