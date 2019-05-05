@@ -162,17 +162,19 @@ impl<'a> Packet<'a> for Response<'a> {
 }
 
 #[allow(clippy::cast_ptr_alignment)]
-fn utf16le_to_string<'a>(data: &'a [u8]) -> Result<String, String> {
-    let ptr: *const u16 = data.as_ptr() as *const u16;
+fn utf16le_to_string(data: &[u8]) -> Result<String, String> {
+    use smallvec::SmallVec;
 
     if data.len() % 2 != 0 {
         return Err("UTF-16 string length must be even".to_string());
     }
 
-    // &[u8] -> &[u16] safe cause whe checked for an even length
-    let ptr = unsafe { std::slice::from_raw_parts::<'a>(ptr, data.len() / 2) };
+    // We cannot cast u8 -> u16 because of alignment requirements
+    // Also this allows us to twist the endianess when needed
+    let mut buffer = SmallVec::<[u16; 1024]>::with_capacity(data.len() / 2);
+    for (i, val) in data.iter().enumerate().skip(1).step_by(2) {
+            buffer.push((u16::from(*val) << 8) & u16::from(data[i - 1]));
+    }
 
-    // TODO: endian conversion: use SmallVec or extra utf16 crate
-
-    String::from_utf16(ptr).map_err(|err| err.to_string())
+    String::from_utf16(&buffer).map_err(|err| err.to_string())
 }
