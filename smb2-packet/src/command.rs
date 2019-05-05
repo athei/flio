@@ -8,6 +8,7 @@ pub mod read;
 pub mod session_setup;
 pub mod tree_connect;
 pub mod tree_disconnect;
+pub mod write;
 
 use crate::header::Command;
 use crate::ntstatus::NTStatus;
@@ -114,5 +115,13 @@ impl<'a> Body<'a> for ResponseBody<'a> {
             return Ok(ResponseBody::NotImplemented { command, body });
         }
         Ok(ResponseBody::Error(error::Response { status, command }))
+    }
+}
+
+fn create_channel(buffer: &[u8], channel_type: ChannelType) -> Channel<'_> {
+    match channel_type {
+        ChannelType::None => Channel::None,
+        ChannelType::RdmaV1 => Channel::RdmaV1(buffer),
+        ChannelType::RdmaV1Invalidate => Channel::RdmaV1Invalidate(buffer),
     }
 }
