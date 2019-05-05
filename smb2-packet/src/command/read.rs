@@ -48,11 +48,11 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
         ) >>
         remaining_bytes: le_u32 >>
         channel_offset: le_u16 >>
+        channel_length: le_u16 >>
         cond_with_error!(
             channel_type != ChannelType::None,
             verify!(value!(channel_offset), |offset| offset >= REQUEST_CONSTANT_SIZE)
         ) >>
-        channel_length: le_u16 >>
         channel: cond_with_error!(
             channel_type != ChannelType::None,
             preceded!(
