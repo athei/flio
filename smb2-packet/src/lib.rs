@@ -161,18 +161,16 @@ impl<'a> Packet<'a> for Response<'a> {
     }
 }
 
+#[allow(clippy::cast_ptr_alignment)]
 fn utf16le_to_string<'a>(data: &'a [u8]) -> Result<String, String> {
-    use std::mem::transmute;
+    let ptr: *const u16 = data.as_ptr() as *const u16;
 
     if data.len() % 2 != 0 {
         return Err("UTF-16 string length must be even".to_string());
     }
 
     // &[u8] -> &[u16] safe cause whe checked for an even length
-    let ptr = unsafe {
-        let ptr: *const u16 = transmute(data.as_ptr());
-        std::slice::from_raw_parts::<'a>(ptr, data.len() / 2)
-    };
+    let ptr = unsafe { std::slice::from_raw_parts::<'a>(ptr, data.len() / 2) };
 
     // TODO: endian conversion: use SmallVec or extra utf16 crate
 

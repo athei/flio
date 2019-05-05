@@ -17,7 +17,7 @@ pub struct Request {
     pub desired_access: u32,  // TODO: add proper type
     pub file_attributes: u32, // TODO: add type
     pub share_access: ShareAccess,
-    pub create_disposition: CreateDisposition,
+    pub create_disposition: Disposition,
     pub create_options: u32, // TODO: add type
     pub name: String,
     // TODO: add contexts
@@ -27,7 +27,7 @@ pub struct Request {
 pub struct Response {
     pub oplock_level: OplockLevel,
     pub flags: Flags,
-    pub create_action: CreateAction,
+    pub create_action: Action,
     pub creation_time: SystemTime,
     pub last_access_time: SystemTime,
     pub change_time: SystemTime,
@@ -70,7 +70,7 @@ bitflags! {
 #[repr(u8)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(FromPrimitive, PartialEq, Eq)]
-pub enum CreateDisposition {
+pub enum Disposition {
     Supersede = 0x00,
     Open = 0x01,
     Create = 0x02,
@@ -88,7 +88,7 @@ bitflags! {
 #[repr(u8)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(FromPrimitive, PartialEq, Eq)]
-pub enum CreateAction {
+pub enum Action {
     Superseded = 0x00,
     Opened = 0x01,
     Created = 0x02,
@@ -96,7 +96,7 @@ pub enum CreateAction {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cyclomatic_complexity, clippy::cast_possible_truncation)]
 pub fn parse_request(data: &[u8], _dialect: Dialect) -> IResult<&[u8], Request> {
     do_parse!(data,
         verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>

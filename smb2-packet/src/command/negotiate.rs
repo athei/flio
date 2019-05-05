@@ -1,4 +1,4 @@
-use crate::{ Dialect, ClientGuid };
+use crate::{ClientGuid, Dialect};
 use bitflags::bitflags;
 use nom::*;
 use num_derive::FromPrimitive;

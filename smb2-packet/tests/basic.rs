@@ -5,10 +5,10 @@
 #[allow(dead_code)]
 mod common;
 
+use crate::common::{parse_pcap_requests, parse_pcap_responses};
 use smb2_packet::command::{RequestBody, ResponseBody};
 use smb2_packet::header::{Command, Flags, Signature, SyncType};
 use smb2_packet::Dialect;
-use crate::common::{parse_pcap_requests, parse_pcap_responses};
 use std::ops::Deref;
 
 #[test]

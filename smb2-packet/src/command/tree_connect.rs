@@ -42,13 +42,13 @@ bitflags! {
         const DFS = 0x01;
         const DFS_ROOT = 0x02;
         const RESTRICT_EXCLUSIVE_OPENS = 0x0000_0100;
-        const FORCE_SHARED_DELETE = 0x000_00200;
-        const ACCESS_BASED_DIRECTORY_ENUM = 0x000_00800;
-        const FORCE_LEVELII_OPLOCK = 0x000_01000;
+        const FORCE_SHARED_DELETE = 0x0000_0200;
+        const ACCESS_BASED_DIRECTORY_ENUM = 0x0000_0800;
+        const FORCE_LEVELII_OPLOCK = 0x0000_1000;
         const ENABLE_HASH_V1 = 0x0000_2000;
         const ENABLE_HASH_V2 = 0x0000_4000;
         const SMB2_SHAREFLAG_ENCRYPT_DATA = 0x0000_8000;
-        const IDENTITY_REMOTING = 0x0004_00000;
+        const IDENTITY_REMOTING = 0x0004_0000;
     }
 }
 
@@ -73,7 +73,7 @@ pub enum ShareType {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cyclomatic_complexity, clippy::cast_possible_truncation)]
 pub fn parse_request(data: &[u8]) -> IResult<&[u8], Request> {
     /* is off by one */
     let const_size = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;

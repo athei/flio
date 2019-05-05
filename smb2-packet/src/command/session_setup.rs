@@ -40,7 +40,7 @@ bitflags! {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cyclomatic_complexity, clippy::cast_possible_truncation)]
 pub fn parse_request(data: &[u8], dialect: Dialect) -> nom::IResult<&[u8], Request> {
     /* for whatever reason the structure size is off by one */
     let constant_size = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;

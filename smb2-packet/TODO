@@ -1,4 +1,2 @@
-- shrink all enums and bitflags to the required size
 - utf16 support for big endian machine
 - channel_buffer und channel als eine struct / enum zusammenfassen
-- replace client gui by fixed size type

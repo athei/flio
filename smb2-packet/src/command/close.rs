@@ -30,7 +30,7 @@ bitflags! {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cyclomatic_complexity, clippy::cast_possible_truncation)]
 pub fn parse_request(data: &[u8]) -> IResult<&[u8], Request> {
     do_parse!(data,
         verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
