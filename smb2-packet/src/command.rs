@@ -12,6 +12,7 @@ pub mod tree_disconnect;
 use crate::header::Command;
 use crate::ntstatus::NTStatus;
 use crate::Dialect;
+use num_derive::FromPrimitive;
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum RequestBody<'a> {
@@ -40,6 +41,22 @@ pub enum ResponseBody<'a> {
     Error(error::Response),
     Read(read::Response<'a>),
     NotImplemented { command: Command, body: &'a [u8] },
+}
+
+#[repr(u8)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(FromPrimitive, PartialEq, Eq, Clone, Copy)]
+enum ChannelType {
+    None = 0x00,
+    RdmaV1 = 0x01,
+    RdmaV1Invalidate = 0x02,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum Channel<'a> {
+    None,
+    RdmaV1(&'a [u8]),
+    RdmaV1Invalidate(&'a [u8]),
 }
 
 pub trait Body<'a>

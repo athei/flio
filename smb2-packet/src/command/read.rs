@@ -1,8 +1,8 @@
-use crate::{Dialect, FileId};
 use bitflags::bitflags;
-use nom::*;
-use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
+use nom::*;
+use super::{ Channel, ChannelType };
+use crate::{Dialect, FileId};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 49;
 const REQUEST_CONSTANT_SIZE: u16 = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;
@@ -31,21 +31,6 @@ bitflags! {
     }
 }
 
-#[repr(u8)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(FromPrimitive, PartialEq, Eq, Clone, Copy)]
-enum ChannelType {
-    None = 0x00,
-    RdmaV1 = 0x01,
-    RdmaV1Invalidate = 0x02,
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub enum Channel<'a> {
-    None,
-    RdmaV1(&'a [u8]),
-    RdmaV1Invalidate(&'a [u8]),
-}
 
 fn create_channel(buffer: &[u8], channel_type: ChannelType) -> Channel<'_> {
     match channel_type {
