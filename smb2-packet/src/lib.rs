@@ -171,7 +171,7 @@ fn utf16le_to_string(data: &[u8]) -> Result<String, String> {
     // Also this allows us to twist the endianess when needed
     let mut buffer = Vec::with_capacity(data.len() / 2);
     for (i, val) in data.iter().enumerate().skip(1).step_by(2) {
-        buffer.push((u16::from(*val) << 8) & u16::from(data[i - 1]));
+        buffer.push((u16::from(*val) << 8) | u16::from(data[i - 1]));
     }
 
     String::from_utf16(&buffer).map_err(|err| err.to_string())
