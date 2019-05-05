@@ -15,9 +15,8 @@ pub struct Request<'a> {
     pub offset: u64,
     pub file_id: FileId,
     pub minimum_count: u32,
-    pub channel: Channel,
     pub remaining_bytes: u32,
-    pub channel_buffer: Option<&'a [u8]>,
+    pub channel: Channel<'a>,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -34,11 +33,26 @@ bitflags! {
 
 #[repr(u8)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(FromPrimitive, PartialEq, Eq)]
-pub enum Channel {
+#[derive(FromPrimitive, PartialEq, Eq, Clone, Copy)]
+enum ChannelType {
     None = 0x00,
     RdmaV1 = 0x01,
     RdmaV1Invalidate = 0x02,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum Channel<'a> {
+    None,
+    RdmaV1(&'a [u8]),
+    RdmaV1Invalidate(&'a [u8]),
+}
+
+fn create_channel(buffer: &[u8], channel_type: ChannelType) -> Channel<'_> {
+    match channel_type {
+        ChannelType::None => Channel::None,
+        ChannelType::RdmaV1 => Channel::RdmaV1(buffer),
+        ChannelType::RdmaV1Invalidate => Channel::RdmaV1Invalidate(buffer),
+    }
 }
 
 #[rustfmt::skip]
@@ -52,20 +66,23 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
         offset: le_u64 >>
         file_id: map!(take!(16), FileId::from_slice) >>
         minimum_count: le_u32 >>
-        channel: switch!(value!(dialect >= Dialect::Smb3_1_1),
-            true => map_opt!(le_u32, FromPrimitive::from_u32) |
-            false => map!(take!(4), |_| Channel::None)
+        channel_type: switch!(value!(dialect >= Dialect::Smb3_1_1),
+            true => map_opt!(le_u32, ChannelType::from_u32) |
+            false => map!(take!(4), |_| ChannelType::None)
         ) >>
         remaining_bytes: le_u32 >>
         channel_offset: le_u16 >>
         cond_with_error!(
-            channel != Channel::None,
+            channel_type != ChannelType::None,
             verify!(value!(channel_offset), |offset| offset >= REQUEST_CONSTANT_SIZE)
         ) >>
         channel_length: le_u16 >>
-        channel_buffer: cond_with_error!(
-            channel != Channel::None,
-            preceded!(take!(offset - u64::from(REQUEST_CONSTANT_SIZE)), take!(channel_length))
+        channel: cond_with_error!(
+            channel_type != ChannelType::None,
+            preceded!(
+                take!(offset - u64::from(REQUEST_CONSTANT_SIZE)),
+                map!(take!(channel_length), |buf| create_channel(buf, channel_type))
+            )
         ) >>
         (Request {
             padding,
@@ -74,9 +91,8 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
             offset,
             file_id,
             minimum_count,
-            channel,
             remaining_bytes,
-            channel_buffer
+            channel: channel.unwrap_or(Channel::None),
         })
     )
 }
