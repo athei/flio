@@ -1,7 +1,13 @@
 use crate::FileId;
 use bitflags::bitflags;
-use nom::*;
 use std::time::SystemTime;
+use nom::{
+    IResult,
+    do_parse,
+    number::complete::le_u16,
+    combinator::verify,
+    bytes::complete::take,
+};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 24;
 
@@ -30,7 +36,7 @@ bitflags! {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::cyclomatic_complexity, clippy::cast_possible_truncation)]
+#[allow(clippy::cognitive_complexity, clippy::cast_possible_truncation)]
 pub fn parse_request(data: &[u8]) -> IResult<&[u8], Request> {
     do_parse!(data,
         verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>

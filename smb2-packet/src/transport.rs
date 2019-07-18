@@ -1,11 +1,11 @@
-use nom::IResult;
-use nom::bytes::streaming::{
-    tag, take
+use nom::{
+    IResult,
+    bytes::streaming::tag,
+    sequence::preceded,
+    multi::length_data,
+    number::streaming::be_u24,
 };
-use nom::sequence::preceded;
 
-pub fn get_payload(&[u8]) -> IResult<&[u8], &[u8]> {
-    preceded(tag(b"\x00"), length_)
+pub fn get_payload(data: &[u8]) -> IResult<&[u8], &[u8]> {
+    preceded(tag(b"\x00"), length_data(be_u24))(data)
 }
-
-//named!(pub get_payload, preceded!(tag(b"\x00"), length_bytes!(be_u24)));
