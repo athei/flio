@@ -15,6 +15,7 @@ use crate::header::Response as ResponseHeader;
 use num_derive::FromPrimitive;
 use std::convert::TryInto;
 use std::ops::Deref;
+use nom::IResult;
 
 #[repr(u16)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromPrimitive)]
@@ -74,26 +75,26 @@ pub struct Response<'a> {
     pub body: ResponseBody<'a>,
 }
 
-pub fn parse<'a, T>(input: &'a [u8], dialect: Dialect) -> nom::IResult<&'a [u8], Vec<T>>
+pub fn parse<'a, T>(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], Vec<T>>
 where
     T: Packet<'a>,
 {
     match transport::get_payload(input) {
-        Ok((rem, out)) => T::parse(out, dialect).map(|i| (rem, i)),
+        Ok((rem, out)) => Ok((rem, T::parse(out, dialect)?.1)),
         Err(x) => Err(x),
     }
 }
 
-pub fn parse_smb1_nego_request(input: &[u8]) -> nom::IResult<&[u8], smb1::NegotiateRequest> {
+pub fn parse_smb1_nego_request(input: &[u8]) -> IResult<&[u8], smb1::NegotiateRequest> {
     match transport::get_payload(input) {
-        Ok((rem, out)) => parse_smb1_nego_request_complete(out).map(|i| (rem, i)),
+        Ok((rem, out)) => Ok((rem, parse_smb1_nego_request_complete(out)?.1)),
         Err(x) => Err(x),
     }
 }
 
 fn parse_smb1_nego_request_complete(
     input: &[u8],
-) -> Result<smb1::NegotiateRequest, nom::Err<&[u8]>> {
+) -> IResult<&[u8], smb1::NegotiateRequest> {
     use nom::complete;
     match complete!(input, smb1::parse_negotiate) {
         Ok((rem, out)) => {
@@ -101,7 +102,7 @@ fn parse_smb1_nego_request_complete(
                 rem.is_empty(),
                 "Only pass complete segments into this function"
             );
-            Ok(out)
+            Ok((rem, out))
         }
         Err(x) => Err(x),
     }
@@ -116,20 +117,17 @@ where
 
     fn new(header: Self::Header, body: Self::Body) -> Self;
 
-    fn parse(input: &'a [u8], dialect: Dialect) -> Result<Vec<Self>, nom::Err<&[u8]>> {
-        use nom::{apply, complete};
+    fn parse(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], Vec<Self>> {
+        use nom::{call, complete};
         let mut result = Vec::new();
         let mut cur = input;
         loop {
-            match complete!(cur, apply!(Self::Header::parse, dialect)) {
+            match complete!(cur, call!(Self::Header::parse, dialect)) {
                 Ok((remainder, output)) => {
                     let status = output.header.get_status();
                     result.push(Self::new(
                         output.header,
-                        complete!(
-                            output.body,
-                            apply!(Self::Body::parse, dialect, output.command, status)
-                        )?,
+                        Self::Body::parse(output.body, dialect, output.command, status)?.1,
                     ));
                     if remainder.is_empty() {
                         break;
@@ -139,7 +137,7 @@ where
                 Err(x) => return Err(x),
             }
         }
-        Ok(result)
+        Ok((cur, result))
     }
 }
 
