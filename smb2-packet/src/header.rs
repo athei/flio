@@ -3,12 +3,9 @@ use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use std::ops::Deref;
 use nom::{
-    *,
     number::complete::{le_u16, le_u32, le_u64},
-    bytes::complete::{tag, take},
-    combinator::{verify, map_opt, map, cond, rest},
-    do_parse,
-    switch,
+    combinator::rest,
+    *,
 };
 
 use crate::ntstatus::NTStatus;

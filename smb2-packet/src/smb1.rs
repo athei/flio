@@ -1,6 +1,13 @@
 use bitflags::bitflags;
-use nom::*;
 use std::ops::Deref;
+use nom::{
+    number::complete::{le_u8, le_u16, le_u32},
+    multi::{fold_many1, length_value},
+    sequence::delimited,
+    bytes::complete::{is_not, tag},
+    sequence::{preceded},
+    *,
+};
 
 pub const SIG_SIZE: usize = 8;
 
@@ -51,7 +58,7 @@ impl Deref for Signature {
     }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 pub enum DialectLevel {
     NotSupported,
     Smb2,
@@ -96,24 +103,6 @@ fn merge_pid(high: u16, low: u16) -> u32 {
     (u32::from(high) << 16) + u32::from(low)
 }
 
-fn fold_dialect(accu: DialectLevel, add: &[u8]) -> DialectLevel {
-    std::cmp::max(accu, add.into())
-}
-
-named!(
-    extract_dialect,
-    delimited!(tag!(b"\x02"), is_not!("b\x00"), tag!(b"\x00"))
-);
-
-fn parse_dialects(input: &[u8]) -> IResult<&[u8], DialectLevel> {
-    fold_many1!(
-        input,
-        complete!(extract_dialect),
-        DialectLevel::NotSupported,
-        fold_dialect
-    )
-}
-
 #[rustfmt::skip]
 fn parse_header(input: &[u8]) -> IResult<&[u8], Header> {
     do_parse!(input,
@@ -121,7 +110,7 @@ fn parse_header(input: &[u8]) -> IResult<&[u8], Header> {
         tag!(b"\x72") >> /* negotiate command */
         status: le_u32 >>
         flags: map_opt!(le_u8, Flags::from_bits) >>
-        verify!(value!(flags.contains(Flags::REPLY)), |is_reply: bool| !is_reply) >>
+        verify!(value!(flags.contains(Flags::REPLY)), |is_reply| !is_reply) >>
         flags2: map_opt!(le_u16, Flags2::from_bits) >>
         pid_high: le_u16 >>
         signature: map!(take!(SIG_SIZE), copy_sig) >>
@@ -143,12 +132,13 @@ fn parse_header(input: &[u8]) -> IResult<&[u8], Header> {
     )
 }
 
-named!(
-    parse_body<DialectLevel>,
-    preceded!(tag!(b"\x00"), length_value!(le_u16, parse_dialects))
-);
-
 pub fn parse_negotiate(input: &[u8]) -> IResult<&[u8], NegotiateRequest> {
+    let parse_dialects = |input| fold_many1(
+        delimited(tag(b"\x02"), is_not("b\x00"), tag(b"\x00")),
+        DialectLevel::NotSupported,
+        |accu, add: &[u8]| std::cmp::max(accu, add.into())
+    )(input);
+    let parse_body = |input| preceded(tag(b"\x00"), length_value(le_u16, parse_dialects))(input);
     do_parse!(
         input,
         header: parse_header >> level: parse_body >> (NegotiateRequest { header, level })
