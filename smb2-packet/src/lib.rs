@@ -95,8 +95,7 @@ pub fn parse_smb1_nego_request(input: &[u8]) -> IResult<&[u8], smb1::NegotiateRe
 fn parse_smb1_nego_request_complete(
     input: &[u8],
 ) -> IResult<&[u8], smb1::NegotiateRequest> {
-    use nom::complete;
-    match complete!(input, smb1::parse_negotiate) {
+    match smb1::parse_negotiate(input) {
         Ok((rem, out)) => {
             assert!(
                 rem.is_empty(),
@@ -118,11 +117,10 @@ where
     fn new(header: Self::Header, body: Self::Body) -> Self;
 
     fn parse(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], Vec<Self>> {
-        use nom::{call, complete};
         let mut result = Vec::new();
         let mut cur = input;
         loop {
-            match complete!(cur, call!(Self::Header::parse, dialect)) {
+            match Self::Header::parse(cur, dialect) {
                 Ok((remainder, output)) => {
                     let status = output.header.get_status();
                     result.push(Self::new(
