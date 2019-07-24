@@ -14,6 +14,7 @@ use crate::header::Command;
 use crate::ntstatus::NTStatus;
 use crate::Dialect;
 use num_derive::FromPrimitive;
+use nom::IResult;
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum RequestBody<'a> {
@@ -69,7 +70,7 @@ where
         dialect: Dialect,
         command: Command,
         status: Option<NTStatus>,
-    ) -> Result<Self, nom::Err<&'a [u8]>>;
+    ) -> IResult<&'a [u8], Self>;
 }
 
 impl<'a> Body<'a> for RequestBody<'a> {
@@ -78,26 +79,45 @@ impl<'a> Body<'a> for RequestBody<'a> {
         dialect: Dialect,
         command: Command,
         _status: Option<NTStatus>,
-    ) -> Result<Self, nom::Err<&'a [u8]>> {
+    ) -> IResult<&'a [u8], Self> {
         let cmd = match command {
-            Command::Negotiate => RequestBody::Negotiate(negotiate::parse(body)?.1),
+            Command::Negotiate => {
+                let res = negotiate::parse(body)?;
+                (res.0, RequestBody::Negotiate(res.1))
+            },
             Command::SessionSetup => {
-                RequestBody::SessionSetup(session_setup::parse_request(body, dialect)?.1)
-            }
+                let res = session_setup::parse_request(body, dialect)?;
+                (res.0, RequestBody::SessionSetup(res.1))
+            },
             Command::Logoff => {
-                logoff::parse_request(body)?;
-                RequestBody::Logoff
-            }
-            Command::TreeConnect => RequestBody::TreeConnect(tree_connect::parse_request(body)?.1),
+                let res = logoff::parse_request(body)?;
+                (res.0, RequestBody::Logoff)
+            },
+            Command::TreeConnect => {
+                let res = tree_connect::parse_request(body)?;
+                (res.0, RequestBody::TreeConnect(res.1))
+            },
             Command::TreeDisconnect => {
-                tree_disconnect::parse_request(body)?;
-                RequestBody::TreeDisconnect
-            }
-            Command::Create => RequestBody::Create(create::parse_request(body, dialect)?.1),
-            Command::Close => RequestBody::Close(close::parse_request(body)?.1),
-            Command::Flush => RequestBody::Flush(flush::parse_request(body)?.1),
-            Command::Read => RequestBody::Read(read::parse_request(body, dialect)?.1),
-            _ => RequestBody::NotImplemented { command, body },
+                let res = tree_disconnect::parse_request(body)?;
+                (res.0, RequestBody::TreeDisconnect)
+            },
+            Command::Create => {
+                let res = create::parse_request(body, dialect)?;
+                (res.0, RequestBody::Create(res.1))
+            },
+            Command::Close => {
+                let res = close::parse_request(body)?;
+                (res.0, RequestBody::Close(res.1))
+            },
+            Command::Flush => {
+                let res = flush::parse_request(body)?;
+                (res.0, RequestBody::Flush(res.1))
+            },
+            Command::Read => {
+                let res = read::parse_request(body, dialect)?;
+                (res.0, RequestBody::Read(res.1))
+            },
+            _ => (body, RequestBody::NotImplemented { command, body }),
         };
         Ok(cmd)
     }
@@ -109,12 +129,12 @@ impl<'a> Body<'a> for ResponseBody<'a> {
         _dialect: Dialect,
         command: Command,
         status: Option<NTStatus>,
-    ) -> Result<Self, nom::Err<&'a [u8]>> {
+    ) -> IResult<&'a [u8], Self> {
         let status = status.unwrap();
         if !status.is_success() {
-            return Ok(ResponseBody::NotImplemented { command, body });
+            return Ok((body, ResponseBody::NotImplemented { command, body }));
         }
-        Ok(ResponseBody::Error(error::Response { status, command }))
+        Ok((body, ResponseBody::Error(error::Response { status, command })))
     }
 }
 
