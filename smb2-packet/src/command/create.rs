@@ -2,10 +2,12 @@ use crate::utf16le_to_string;
 use crate::Dialect;
 use crate::FileId;
 use bitflags::bitflags;
-use nom::*;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use std::time::SystemTime;
+use nom::{
+    *, number::complete::{le_u8, le_u16, le_u32},
+};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 57;
 const REQUEST_CONSTANT_SIZE: u16 = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;
@@ -99,7 +101,7 @@ pub enum Action {
 #[allow(clippy::cyclomatic_complexity, clippy::cast_possible_truncation)]
 pub fn parse_request(data: &[u8], _dialect: Dialect) -> IResult<&[u8], Request> {
     do_parse!(data,
-        verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
+        verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>
         take!(1) >> /* ignore security flags */
         requested_oplock_level: map_opt!(le_u8, FromPrimitive::from_u8) >>
         impersonation_level: map_opt!(le_u32, FromPrimitive::from_u32) >>
@@ -109,7 +111,7 @@ pub fn parse_request(data: &[u8], _dialect: Dialect) -> IResult<&[u8], Request> 
         share_access: map_opt!(le_u32, |x| ShareAccess::from_bits(x as u8)) >>
         create_disposition: map_opt!(le_u32, FromPrimitive::from_u32) >>
         create_options: le_u32 >>
-        name_offset: verify!(le_u16, |offset| offset >= REQUEST_CONSTANT_SIZE) >>
+        name_offset: verify!(le_u16, |&offset| offset >= REQUEST_CONSTANT_SIZE) >>
         name_length: le_u16 >>
         _create_context_offset: le_u32 >>
         _create_context_length: le_u32 >>

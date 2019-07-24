@@ -1,8 +1,11 @@
 use crate::{ClientGuid, Dialect};
 use bitflags::bitflags;
-use nom::*;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
+use nom::{
+    *, number::complete::{le_u16, le_u32},
+    combinator::rest,
+};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 36;
 
@@ -111,7 +114,7 @@ fn parse_negotiate_context(input: &[u8], packet_len: u32) -> IResult<&[u8], Cont
         context_type: le_u16 >>
         data_length: le_u16 >>
         take!(4) >> /* reserved */
-        context: length_value!(value!(data_length), apply!(Context::new, context_type)) >>
+        context: length_value!(value!(data_length), call!(Context::new, context_type)) >>
         (context)
     )
 }
@@ -126,9 +129,9 @@ fn parse_negotiate_contexts(
 ) -> IResult<&[u8], Vec<Context>> {
     let current_pos = packet_length - input.len() as u32;
     let negot = do_parse!(input,
-        verify!(value!(offset), |x| x >= current_pos) >>
+        verify!(value!(offset), |&x| x >= current_pos) >>
         take!(offset - current_pos) >> /* optional padding */
-        context: count!(apply!(parse_negotiate_context, packet_length), usize::from(count)) >>
+        context: count!(call!(parse_negotiate_context, packet_length), usize::from(count)) >>
         (context)
     );
     negot
@@ -140,8 +143,8 @@ fn parse_negotiate_contexts(
 pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
     let packet_length = data.len() as u32 + u32::from(crate::header::STRUCTURE_SIZE);
     do_parse!(data,
-        verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
-        dialect_count: verify!(le_u16, |x| x > 0) >>
+        verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>
+        dialect_count: verify!(le_u16, |&x| x > 0) >>
         security_mode: le_u16 >>
         take!(2) >> /* reserved */
         capabilities: map_opt!(le_u32, |x| Capabilities::from_bits(x as u8)) >>
@@ -151,9 +154,9 @@ pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
         take!(2) >> /* reserved */
         dialects: count!(map_opt!(le_u16, FromPrimitive::from_u16), usize::from(dialect_count)) >>
         negotiate_contexts:
-            cond_with_error!(
+            cond!(
                 dialects.contains(&Dialect::Smb3_1_1),
-                apply!(
+                call!(
                     parse_negotiate_contexts,
                     packet_length,
                     negot_context_offset,
