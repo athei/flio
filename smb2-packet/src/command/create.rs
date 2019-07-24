@@ -98,7 +98,7 @@ pub enum Action {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::cyclomatic_complexity, clippy::cast_possible_truncation)]
+#[allow(clippy::cognitive_complexity, clippy::cast_possible_truncation)]
 pub fn parse_request(data: &[u8], _dialect: Dialect) -> IResult<&[u8], Request> {
     do_parse!(data,
         verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>

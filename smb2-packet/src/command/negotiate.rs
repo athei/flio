@@ -138,7 +138,7 @@ fn parse_negotiate_contexts(
 }
 
 #[rustfmt::skip]
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cognitive_complexity)]
 #[allow(clippy::cast_possible_truncation)]
 pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
     let packet_length = data.len() as u32 + u32::from(crate::header::STRUCTURE_SIZE);

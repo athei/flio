@@ -75,7 +75,7 @@ pub enum ShareType {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::cyclomatic_complexity, clippy::cast_possible_truncation)]
+#[allow(clippy::cognitive_complexity, clippy::cast_possible_truncation)]
 pub fn parse_request(data: &[u8]) -> IResult<&[u8], Request> {
     /* is off by one */
     let const_size = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;

@@ -121,7 +121,7 @@ where
 
     fn get_status(&self) -> Option<NTStatus>;
 
-    #[allow(clippy::cyclomatic_complexity)]
+    #[allow(clippy::cognitive_complexity)]
     #[rustfmt::skip]
     fn parse<'a>(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], ParseResult<Self>>
     {
