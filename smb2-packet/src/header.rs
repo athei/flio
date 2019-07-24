@@ -1,8 +1,15 @@
 use bitflags::bitflags;
-use nom::*;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use std::ops::Deref;
+use nom::{
+    *,
+    number::complete::{le_u16, le_u32, le_u64},
+    bytes::complete::{tag, take},
+    combinator::{verify, map_opt, map, cond, rest},
+    do_parse,
+    switch,
+};
 
 use crate::ntstatus::NTStatus;
 use crate::Dialect;
@@ -123,7 +130,7 @@ where
     {
         do_parse!(input,
             tag!(b"\xfeSMB") >>
-            verify!(le_u16, |v| v == STRUCTURE_SIZE) >>
+            verify!(le_u16, |v| *v == STRUCTURE_SIZE) >>
             credit_charge: le_u16 >>
             status_bytes: take!(4) >>
             command: map_opt!(le_u16, FromPrimitive::from_u16) >>
@@ -131,24 +138,24 @@ where
             flags: map_opt!(le_u32, Flags::from_bits) >>
             verify!(
                 value!(flags.contains(Flags::SERVER_TO_REDIR)),
-                |val| val == Self::IS_RESPONSE
+                |val| *val == Self::IS_RESPONSE
             ) >>
-            status: cond_with_error!(
+            status: cond!(
                 Self::IS_RESPONSE,
                 map_opt!(
                     value!(value(le_u32, status_bytes)),
                     FromPrimitive::from_u32
                 )
             ) >>
-            channel_sequence: cond_with_error!(
+            channel_sequence: cond!(
                 has_channel_sequence(dialect, Self::IS_RESPONSE),
                 value!(value(le_u16, status_bytes))
             ) >>
             next_command: le_u32 >>
             message_id: le_u64 >>
-            cond_with_error!(!flags.contains(Flags::ASYNC_COMMAND), take!(4)) >>
-            tree_id: cond_with_error!(!flags.contains(Flags::ASYNC_COMMAND), le_u32) >>
-            async_id: cond_with_error!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
+            cond!(!flags.contains(Flags::ASYNC_COMMAND), take!(4)) >>
+            tree_id: cond!(!flags.contains(Flags::ASYNC_COMMAND), le_u32) >>
+            async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
             session_id: le_u64 >>
             signature: map!(take!(SIG_SIZE), copy_sig) >>
             body: switch!(value!(next_command > u32::from(STRUCTURE_SIZE)),
@@ -282,9 +289,9 @@ fn has_channel_sequence(dialect: Dialect, is_response: bool) -> bool {
     }
 }
 
-fn value<F, O>(f: F, data: &[u8]) -> O
+fn value<'a, F, O>(f: F, data: &'a [u8]) -> O
 where
-    F: Fn(&[u8]) -> IResult<&[u8], O>,
+    F: Fn(&'a [u8]) -> IResult<&'a [u8], O>,
 {
     f(data).unwrap().1
 }
