@@ -1,6 +1,8 @@
 use crate::Dialect;
 use bitflags::bitflags;
-use nom::*;
+use nom::{
+    *, number::complete::{le_u8, le_u16, le_u32, le_u64},
+};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 25;
 
@@ -45,13 +47,13 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> nom::IResult<&[u8], Reque
     /* for whatever reason the structure size is off by one */
     let constant_size = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;
     do_parse!(data,
-        verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
+        verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>
         flags: map_opt!(le_u8, Flags::from_bits) >>
-        cond!(dialect >= Dialect::Smb3_0_0, verify!(value!(flags.is_empty()), |x| x)) >>
+        cond!(dialect >= Dialect::Smb3_0_0, verify!(value!(flags.is_empty()), |&x| x)) >>
         security_mode: le_u8 >>
         capabilities: map!(le_u32, |x| Capabilities::from_bits_truncate(x as u8)) >>
         take!(4) >> /* ignore Channel */
-        security_buffer_offset: verify!(le_u16, |offset| offset >= constant_size) >>
+        security_buffer_offset: verify!(le_u16, |&offset| offset >= constant_size) >>
         security_buffer_length: le_u16 >>
         previous_session_id: le_u64 >>
         take!(security_buffer_offset - constant_size) >> /* padding */

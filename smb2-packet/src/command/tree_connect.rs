@@ -1,7 +1,9 @@
 use crate::utf16le_to_string;
 use bitflags::bitflags;
-use nom::*;
 use num_derive::FromPrimitive;
+use nom::{
+    *, number::complete::le_u16,
+};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 9;
 
@@ -78,9 +80,9 @@ pub fn parse_request(data: &[u8]) -> IResult<&[u8], Request> {
     /* is off by one */
     let const_size = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;
     do_parse!(data,
-        verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
+        verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>
         flags: map_opt!(le_u16, |x| Flags::from_bits(x as u8)) >>
-        path_offset: verify!(le_u16, |offset| offset >= const_size) >>
+        path_offset: verify!(le_u16, |&offset| offset >= const_size) >>
         path_length: le_u16 >>
         take!(path_offset - const_size) >> // padding
         path: map_res!(take!(path_length), utf16le_to_string) >>

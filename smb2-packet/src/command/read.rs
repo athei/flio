@@ -1,8 +1,10 @@
 use super::{Channel, ChannelType};
 use crate::{Dialect, FileId};
 use bitflags::bitflags;
-use nom::*;
 use num_traits::FromPrimitive;
+use nom::{
+    *, number::complete::{le_u8, le_u16, le_u32, le_u64},
+};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 49;
 const REQUEST_CONSTANT_SIZE: u16 = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;
@@ -35,10 +37,10 @@ bitflags! {
 #[allow(clippy::cyclomatic_complexity)]
 pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
     do_parse!(data,
-        verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
+        verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>
         padding: le_u8 >>
         flags: map_opt!(le_u8, Flags::from_bits) >>
-        length: verify!(le_u32, |l| l > 0) >>
+        length: verify!(le_u32, |&l| l > 0) >>
         offset: le_u64 >>
         file_id: map!(take!(16), FileId::from_slice) >>
         minimum_count: le_u32 >>
@@ -49,11 +51,11 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
         remaining_bytes: le_u32 >>
         channel_offset: le_u16 >>
         channel_length: le_u16 >>
-        cond_with_error!(
+        cond!(
             channel_type != ChannelType::None,
-            verify!(value!(channel_offset), |offset| offset >= REQUEST_CONSTANT_SIZE)
+            verify!(value!(channel_offset), |&offset| offset >= REQUEST_CONSTANT_SIZE)
         ) >>
-        channel: cond_with_error!(
+        channel: cond!(
             channel_type != ChannelType::None,
             preceded!(
                 take!(channel_offset - REQUEST_CONSTANT_SIZE),
