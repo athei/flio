@@ -1,5 +1,7 @@
 use crate::FileId;
-use nom::*;
+use nom::{
+    *, number::complete::le_u16,
+};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 24;
 
@@ -12,7 +14,7 @@ pub struct Request {
 #[allow(clippy::cyclomatic_complexity)]
 pub fn parse_request(data: &[u8]) -> IResult<&[u8], Request> {
     do_parse!(data,
-        verify!(le_u16, |x| x == REQUEST_STRUCTURE_SIZE) >>
+        verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>
         take!(6) >> /* reserved */
         file_id: map!(take!(16), FileId::from_slice) >>
         (Request {
