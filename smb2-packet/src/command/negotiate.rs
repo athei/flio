@@ -6,6 +6,7 @@ use nom::{
     *, number::complete::{le_u16, le_u32},
     combinator::rest,
 };
+use crate::IResult;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 36;
 
@@ -140,7 +141,7 @@ fn parse_negotiate_contexts(
 #[rustfmt::skip]
 #[allow(clippy::cognitive_complexity)]
 #[allow(clippy::cast_possible_truncation)]
-pub fn parse<'a>(data: &'a [u8]) -> nom::IResult<&'a [u8], Request> {
+pub fn parse<'a>(data: &'a [u8]) -> IResult<&'a [u8], Request> {
     let packet_length = data.len() as u32 + u32::from(crate::header::STRUCTURE_SIZE);
     do_parse!(data,
         verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>

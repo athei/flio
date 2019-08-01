@@ -13,8 +13,8 @@ pub mod write;
 use crate::header::Command;
 use crate::ntstatus::NTStatus;
 use crate::Dialect;
+use crate::IResult;
 use num_derive::FromPrimitive;
-use nom::IResult;
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum RequestBody<'a> {

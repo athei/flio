@@ -4,6 +4,7 @@ use num_derive::FromPrimitive;
 use nom::{
     *, number::complete::le_u16,
 };
+use crate::IResult;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 9;
 

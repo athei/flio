@@ -2,6 +2,7 @@ use crate::FileId;
 use nom::{
     *, number::complete::le_u16,
 };
+use crate::IResult;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 24;
 

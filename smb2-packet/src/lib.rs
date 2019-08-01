@@ -15,7 +15,9 @@ use crate::header::Response as ResponseHeader;
 use num_derive::FromPrimitive;
 use std::convert::TryInto;
 use std::ops::Deref;
-use nom::IResult;
+
+//pub type IResult<I, O, E = nom::error::VerboseError<I>> = Result<(I, O), nom::Err<E>>;
+pub type IResult<I, O> = nom::IResult<I, O>;
 
 #[repr(u16)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromPrimitive)]

@@ -8,6 +8,7 @@ use nom::{
     sequence::{preceded},
     *,
 };
+use crate::IResult;
 
 pub const SIG_SIZE: usize = 8;
 

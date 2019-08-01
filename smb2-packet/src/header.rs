@@ -7,6 +7,7 @@ use nom::{
     combinator::rest,
     *,
 };
+use crate::IResult;
 
 use crate::ntstatus::NTStatus;
 use crate::Dialect;

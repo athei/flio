@@ -1,5 +1,4 @@
 use lazy_static::lazy_static;
-use nom::IResult;
 use pcarp::Capture;
 use pnet_packet::ethernet::{EtherTypes, EthernetPacket};
 use pnet_packet::ipv4::Ipv4Packet;
@@ -7,7 +6,7 @@ use pnet_packet::ipv6::Ipv6Packet;
 use pnet_packet::tcp::TcpPacket;
 use pnet_packet::Packet;
 use smb2_packet::smb1::NegotiateRequest as V1NegotRequest;
-use smb2_packet::{parse, parse_smb1_nego_request, Dialect, Request, Response};
+use smb2_packet::{IResult, parse, parse_smb1_nego_request, Dialect, Request, Response};
 use std::path::PathBuf;
 
 enum IPPacket<'a> {

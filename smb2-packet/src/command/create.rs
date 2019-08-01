@@ -8,6 +8,7 @@ use std::time::SystemTime;
 use nom::{
     *, number::complete::{le_u8, le_u16, le_u32},
 };
+use crate::IResult;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 57;
 const REQUEST_CONSTANT_SIZE: u16 = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;

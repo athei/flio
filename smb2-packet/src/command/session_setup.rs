@@ -3,6 +3,7 @@ use bitflags::bitflags;
 use nom::{
     *, number::complete::{le_u8, le_u16, le_u32, le_u64},
 };
+use crate::IResult;
 
 const REQUEST_STRUCTURE_SIZE: u16 = 25;
 
@@ -43,7 +44,7 @@ bitflags! {
 
 #[rustfmt::skip]
 #[allow(clippy::cognitive_complexity, clippy::cast_possible_truncation)]
-pub fn parse_request(data: &[u8], dialect: Dialect) -> nom::IResult<&[u8], Request> {
+pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
     /* for whatever reason the structure size is off by one */
     let constant_size = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;
     do_parse!(data,
