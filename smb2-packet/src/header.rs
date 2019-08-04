@@ -4,13 +4,13 @@ use num_traits::FromPrimitive;
 use std::ops::Deref;
 use nom::{
     number::complete::{le_u16, le_u32, le_u64},
-    combinator::rest,
+    combinator::{map_opt, rest},
     *,
 };
 use crate::IResult;
 use crate::ntstatus::NTStatus;
 use crate::Dialect;
-use crate::exec;
+use crate::apply;
 use crate::wrap;
 
 pub const STRUCTURE_SIZE: u16 = 64;
@@ -141,14 +141,14 @@ where
             ) >>
             status: cond!(
                 Self::IS_RESPONSE,
-                map_opt!(
-                    wrap(exec(le_u32, status_bytes)),
+                map_opt(
+                    apply(le_u32, status_bytes),
                     FromPrimitive::from_u32
                 )
             ) >>
             channel_sequence: cond!(
                 has_channel_sequence(dialect, Self::IS_RESPONSE),
-                wrap(exec(le_u16, status_bytes))
+                apply(le_u16, status_bytes)
             ) >>
             next_command: le_u32 >>
             message_id: le_u64 >>

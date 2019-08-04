@@ -181,9 +181,11 @@ fn wrap<I, O>(val: O) -> impl Fn(I) -> IResult<I, O> {
     }
 }
 
-fn exec<'a, F, O>(f: F, data: &'a [u8]) -> O
+fn apply<I, O, F>(f: F, data: I) -> impl Fn(I) -> IResult<I, O>
 where
-    F: Fn(&'a [u8]) -> IResult<&'a [u8], O>,
+    F: Fn(I) -> IResult<I, O>,
 {
-    f(data).unwrap().1
+    move |i: I| {
+        Ok((i, f(data)?.1))
+    }
 }
