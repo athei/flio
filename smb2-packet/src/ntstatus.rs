@@ -84,6 +84,7 @@ pub enum NTStatus {
     InvalidEaFlag = 0x8000_0015,
     StoppedOnSymlink = 0x8000_002D,
     InvalidParameter = 0xC000_000D,
+    EndOfFile = 0xC000_0011,
 }
 
 #[cfg(test)]
