@@ -1,4 +1,4 @@
-use super::{Channel, ChannelType};
+use super::{Channel, ChannelType, wrap};
 use crate::{Dialect, FileId};
 use bitflags::bitflags;
 use num_traits::FromPrimitive;
@@ -34,6 +34,10 @@ bitflags! {
     }
 }
 
+fn parse_channel(i: &[u8], dialect: Dialect) -> Option<ChannelType> {
+    
+}
+
 #[rustfmt::skip]
 #[allow(clippy::cognitive_complexity)]
 pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
@@ -54,7 +58,7 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
         channel_length: le_u16 >>
         cond!(
             channel_type != ChannelType::None,
-            verify!(value!(channel_offset), |&offset| offset >= REQUEST_CONSTANT_SIZE)
+            verify!(wrap(channel_offset), |&offset| offset >= REQUEST_CONSTANT_SIZE)
         ) >>
         channel: cond!(
             channel_type != ChannelType::None,

@@ -8,9 +8,10 @@ use nom::{
     *,
 };
 use crate::IResult;
-
 use crate::ntstatus::NTStatus;
 use crate::Dialect;
+use crate::exec;
+use crate::wrap;
 
 pub const STRUCTURE_SIZE: u16 = 64;
 pub const SIG_SIZE: usize = 16;
@@ -128,26 +129,26 @@ where
     {
         do_parse!(input,
             tag!(b"\xfeSMB") >>
-            verify!(le_u16, |v| *v == STRUCTURE_SIZE) >>
+            verify!(le_u16, |&v| v == STRUCTURE_SIZE) >>
             credit_charge: le_u16 >>
             status_bytes: take!(4) >>
             command: map_opt!(le_u16, FromPrimitive::from_u16) >>
             credit_req_grant: le_u16 >>
             flags: map_opt!(le_u32, Flags::from_bits) >>
             verify!(
-                value!(flags.contains(Flags::SERVER_TO_REDIR)),
-                |val| *val == Self::IS_RESPONSE
+                wrap(flags.contains(Flags::SERVER_TO_REDIR)),
+                |&val| val == Self::IS_RESPONSE
             ) >>
             status: cond!(
                 Self::IS_RESPONSE,
                 map_opt!(
-                    value!(value(le_u32, status_bytes)),
+                    wrap(exec(le_u32, status_bytes)),
                     FromPrimitive::from_u32
                 )
             ) >>
             channel_sequence: cond!(
                 has_channel_sequence(dialect, Self::IS_RESPONSE),
-                value!(value(le_u16, status_bytes))
+                wrap(exec(le_u16, status_bytes))
             ) >>
             next_command: le_u32 >>
             message_id: le_u64 >>
@@ -156,30 +157,29 @@ where
             async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
             session_id: le_u64 >>
             signature: map!(take!(SIG_SIZE), copy_sig) >>
-            body: switch!(value!(next_command > u32::from(STRUCTURE_SIZE)),
+            body: switch!(call!(wrap(next_command > u32::from(STRUCTURE_SIZE))),
                 true => take!(next_command - u32::from(STRUCTURE_SIZE)) |
                 false => call!(rest)
             ) >>
-            (
-                ParseResult::<Self>::new( Self::new (
-                        if dialect > Dialect::Smb2_0_2 { Some(credit_charge) } else { None },
-                        credit_req_grant,
-                        channel_sequence,
-                        status,
-                        flags,
-                        message_id,
-                        {
-                            if let Some(tree_id) = tree_id {
-                                SyncType::Sync { tree_id }
-                            } else {
-                                SyncType::Async { async_id: async_id.unwrap() }
-                            }
-                        },
-                        session_id,
-                        signature,
-                    ),
-                    command,
-                    body
+            (ParseResult::<Self>::new(Self::new(
+                    if dialect > Dialect::Smb2_0_2 { Some(credit_charge) } else { None },
+                    credit_req_grant,
+                    channel_sequence,
+                    status,
+                    flags,
+                    message_id,
+                    {
+                        if let Some(tree_id) = tree_id {
+                            SyncType::Sync { tree_id }
+                        } else {
+                            SyncType::Async { async_id: async_id.unwrap() }
+                        }
+                    },
+                    session_id,
+                    signature,
+                ),
+                command,
+                body
                 )
             )
         )
@@ -285,11 +285,4 @@ fn has_channel_sequence(dialect: Dialect, is_response: bool) -> bool {
         Dialect::Smb3_0_0 | Dialect::Smb3_0_2 | Dialect::Smb3_1_1 => true,
         _ => false,
     }
-}
-
-fn value<'a, F, O>(f: F, data: &'a [u8]) -> O
-where
-    F: Fn(&'a [u8]) -> IResult<&'a [u8], O>,
-{
-    f(data).unwrap().1
 }

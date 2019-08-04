@@ -16,8 +16,8 @@ use num_derive::FromPrimitive;
 use std::convert::TryInto;
 use std::ops::Deref;
 
-//pub type IResult<I, O, E = nom::error::VerboseError<I>> = Result<(I, O), nom::Err<E>>;
-pub type IResult<I, O> = nom::IResult<I, O>;
+pub type IResult<I, O> = nom::IResult<I, O, nom::error::VerboseError<I>>;
+//pub type IResult<I, O> = nom::IResult<I, O>;
 
 #[repr(u16)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromPrimitive)]
@@ -173,4 +173,17 @@ fn utf16le_to_string(data: &[u8]) -> Result<String, String> {
     }
 
     String::from_utf16(&buffer).map_err(|err| err.to_string())
+}
+
+fn wrap<I, O>(val: O) -> impl Fn(I) -> IResult<I, O> {
+    move |input: I| {
+        Ok((input, val))
+    }
+}
+
+fn exec<'a, F, O>(f: F, data: &'a [u8]) -> O
+where
+    F: Fn(&'a [u8]) -> IResult<&'a [u8], O>,
+{
+    f(data).unwrap().1
 }
