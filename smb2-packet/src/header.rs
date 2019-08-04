@@ -125,7 +125,7 @@ where
 
     #[allow(clippy::cognitive_complexity)]
     #[rustfmt::skip]
-    fn parse<'a>(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], ParseResult<Self>>
+    fn do_parse<'a>(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], ParseResult<Self>>
     {
         do_parse!(input,
             tag!(b"\xfeSMB") >>
@@ -183,6 +183,10 @@ where
                 )
             )
         )
+    }
+
+    fn parse<'a>(input: &'a [u8], dialect: Dialect) -> IResult<&'a [u8], ParseResult<Self>> {
+        nom::error::context("Header", |i: &'a [u8]| Self::do_parse(i, dialect))(input)
     }
 }
 
