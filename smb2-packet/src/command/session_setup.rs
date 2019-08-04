@@ -2,7 +2,6 @@ use crate::{Dialect, wrap};
 use bitflags::bitflags;
 use nom::{
     *, number::complete::{le_u8, le_u16, le_u32, le_u64},
-    combinator::verify,
 };
 use crate::IResult;
 
@@ -51,7 +50,7 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
     do_parse!(data,
         verify!(le_u16, |&x| x == REQUEST_STRUCTURE_SIZE) >>
         flags: map_opt!(le_u8, Flags::from_bits) >>
-        cond!(dialect >= Dialect::Smb3_0_0, verify(wrap(flags.is_empty()), |&x| x)) >>
+        cond!(dialect >= Dialect::Smb3_0_0, verify!(wrap!(flags.is_empty()), |&x| x)) >>
         security_mode: le_u8 >>
         capabilities: map!(le_u32, |x| Capabilities::from_bits_truncate(x as u8)) >>
         take!(4) >> /* ignore Channel */

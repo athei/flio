@@ -5,7 +5,7 @@ use num_traits::FromPrimitive;
 use nom::{
     *, number::complete::{le_u8, le_u16, le_u32, le_u64},
 };
-use crate::IResult;
+use crate::{IResult, wrap};
 
 const REQUEST_STRUCTURE_SIZE: u16 = 49;
 const REQUEST_CONSTANT_SIZE: u16 = crate::header::STRUCTURE_SIZE + REQUEST_STRUCTURE_SIZE - 1;
@@ -79,7 +79,7 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
         data_length: verify!(le_u32, |&l| l > 0) >>
         offset: le_u64 >>
         file_id: map!(take!(16), FileId::from_slice) >>
-        channel_type: switch!(value!(dialect >= Dialect::Smb3_1_1),
+        channel_type: switch!(wrap!(dialect >= Dialect::Smb3_1_1),
             true => map_opt!(le_u32, ChannelType::from_u32) |
             false => map!(take!(4), |_| ChannelType::None)
         ) >>
@@ -87,10 +87,10 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
         channel_offset: map!(le_u16, |x| if channel_type == ChannelType::None { u16::max_value() } else { x }) >>
         channel_length: verify!(le_u16, |&x| channel_type == ChannelType::None || x > 0) >>
         flags: map_opt!(le_u8, Flags::from_bits) >>
-        buffers: value!(sort_buffers(channel_offset, channel_length, data_offset, data_length)) >>
-        verify!(value!(buffers.0.offset), |&offset| offset >= REQUEST_CONSTANT_SIZE) >>
+        buffers: wrap!(sort_buffers(channel_offset, channel_length, data_offset, data_length)) >>
+        verify!(wrap!(buffers.0.offset), |&offset| offset >= REQUEST_CONSTANT_SIZE) >>
         verify!(
-            value!(buffers.1.offset),
+            wrap!(buffers.1.offset),
             |&offset|
                 channel_type == ChannelType::None ||
                 u32::from(offset) > (u32::from(REQUEST_CONSTANT_SIZE) + buffers.0.length)
@@ -103,13 +103,13 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
                 take!(buffers.1.length)
             )
         ) >>
-        data: switch!(value!(second_buffer.is_some() && data_offset > channel_offset),
-            true => value!(second_buffer.unwrap()) |
-            false => value!(first_buffer)
+        data: switch!(wrap!(second_buffer.is_some() && data_offset > channel_offset),
+            true => wrap!(second_buffer.unwrap()) |
+            false => wrap!(first_buffer)
         ) >>
-        channel: switch!(value!(second_buffer.is_some() && channel_offset > data_offset),
-            true => value!(super::create_channel(second_buffer.unwrap(), channel_type)) |
-            false => value!(super::create_channel(first_buffer, channel_type))
+        channel: switch!(wrap!(second_buffer.is_some() && channel_offset > data_offset),
+            true => wrap!(super::create_channel(second_buffer.unwrap(), channel_type)) |
+            false => wrap!(super::create_channel(first_buffer, channel_type))
         ) >>
         (Request {
             write_through: flags.contains(Flags::WRITE_THROUGH),

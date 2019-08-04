@@ -111,7 +111,7 @@ fn parse_header(input: &[u8]) -> IResult<&[u8], Header> {
         tag!(b"\x72") >> /* negotiate command */
         status: le_u32 >>
         flags: map_opt!(le_u8, Flags::from_bits) >>
-        verify!(wrap(flags.contains(Flags::REPLY)), |is_reply| !is_reply) >>
+        verify!(wrap!(flags.contains(Flags::REPLY)), |is_reply| !is_reply) >>
         flags2: map_opt!(le_u16, Flags2::from_bits) >>
         pid_high: le_u16 >>
         signature: map!(take!(SIG_SIZE), copy_sig) >>

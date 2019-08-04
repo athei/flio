@@ -115,7 +115,7 @@ fn parse_negotiate_context(input: &[u8], packet_len: u32) -> IResult<&[u8], Cont
         context_type: le_u16 >>
         data_length: le_u16 >>
         take!(4) >> /* reserved */
-        context: length_value!(wrap(data_length), call!(Context::new, context_type)) >>
+        context: length_value!(wrap!(data_length), call!(Context::new, context_type)) >>
         (context)
     )
 }
@@ -130,7 +130,7 @@ fn parse_negotiate_contexts(
 ) -> IResult<&[u8], Vec<Context>> {
     let current_pos = packet_length - input.len() as u32;
     let negot = do_parse!(input,
-        verify!(wrap(offset), |&x| x >= current_pos) >>
+        verify!(wrap!(offset), |&x| x >= current_pos) >>
         take!(offset - current_pos) >> /* optional padding */
         context: count!(call!(parse_negotiate_context, packet_length), usize::from(count)) >>
         (context)

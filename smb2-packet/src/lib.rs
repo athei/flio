@@ -175,15 +175,20 @@ fn utf16le_to_string(data: &[u8]) -> Result<String, String> {
     String::from_utf16(&buffer).map_err(|err| err.to_string())
 }
 
-fn wrap<I, O>(val: O) -> impl Fn(I) -> IResult<I, O> {
-    move |input: I| {
-        Ok((input, val))
+#[macro_export]
+macro_rules! wrap (
+  ($i:expr, $res:expr) => (
+    {
+      let res: $crate::IResult<_,_> = Ok(($i, $res));
+      res
     }
-}
+  );
+);
 
 fn apply<I, O, F>(f: F, data: I) -> impl Fn(I) -> IResult<I, O>
 where
     F: Fn(I) -> IResult<I, O>,
+    I: Clone + Copy
 {
     move |i: I| {
         Ok((i, f(data)?.1))

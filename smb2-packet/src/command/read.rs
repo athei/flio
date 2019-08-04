@@ -45,7 +45,7 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
         offset: le_u64 >>
         file_id: map!(take!(16), FileId::from_slice) >>
         minimum_count: le_u32 >>
-        channel_type: switch!(call!(wrap(dialect >= Dialect::Smb3_1_1)),
+        channel_type: switch!(wrap!(dialect >= Dialect::Smb3_1_1),
             true => map_opt!(le_u32, ChannelType::from_u32) |
             false => map!(take!(4), |_| ChannelType::None)
         ) >>
@@ -54,7 +54,7 @@ pub fn parse_request(data: &[u8], dialect: Dialect) -> IResult<&[u8], Request> {
         channel_length: le_u16 >>
         cond!(
             channel_type != ChannelType::None,
-            verify!(wrap(channel_offset), |&offset| offset >= REQUEST_CONSTANT_SIZE)
+            verify!(wrap!(channel_offset), |&offset| offset >= REQUEST_CONSTANT_SIZE)
         ) >>
         channel: cond!(
             channel_type != ChannelType::None,

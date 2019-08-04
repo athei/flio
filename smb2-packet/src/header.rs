@@ -136,7 +136,7 @@ where
             credit_req_grant: le_u16 >>
             flags: map_opt!(le_u32, Flags::from_bits) >>
             verify!(
-                wrap(flags.contains(Flags::SERVER_TO_REDIR)),
+                wrap!(flags.contains(Flags::SERVER_TO_REDIR)),
                 |&val| val == Self::IS_RESPONSE
             ) >>
             status: cond!(
@@ -157,7 +157,7 @@ where
             async_id: cond!(flags.contains(Flags::ASYNC_COMMAND), le_u64) >>
             session_id: le_u64 >>
             signature: map!(take!(SIG_SIZE), copy_sig) >>
-            body: switch!(call!(wrap(next_command > u32::from(STRUCTURE_SIZE))),
+            body: switch!(wrap!(next_command > u32::from(STRUCTURE_SIZE)),
                 true => take!(next_command - u32::from(STRUCTURE_SIZE)) |
                 false => call!(rest)
             ) >>
